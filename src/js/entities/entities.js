@@ -60,10 +60,13 @@
   }
 
   // Approximate hull as 3 circles for fair, forgiving collision.
+  // Rotated to match visual angle, reduced radii to prevent cheap hits.
   function rocketHits(target) {
-    return circleHit({ x: rocket.x + 18, y: rocket.y, r: 11 }, target)
-        || circleHit({ x: rocket.x - 4,  y: rocket.y, r: 16 }, target)
-        || circleHit({ x: rocket.x - 22, y: rocket.y, r: 10 }, target);
+    const cos = Math.cos(rocket.angle);
+    const sin = Math.sin(rocket.angle);
+    return circleHit({ x: rocket.x + 16 * cos, y: rocket.y + 16 * sin, r: 8 }, target)
+        || circleHit({ x: rocket.x - 4 * cos,  y: rocket.y - 4 * sin,  r: 12 }, target)
+        || circleHit({ x: rocket.x - 22 * cos, y: rocket.y - 22 * sin, r: 8 }, target);
   }
 
   function fireBullet() {
@@ -194,7 +197,7 @@
     }
 
     rocket.vx *= Math.pow(drag, dt * 60);
-    rocket.vy *= Math.pow(0.965, dt * 60);
+    rocket.vy *= Math.pow(drag, dt * 60);
     rocket.vx = clamp(rocket.vx, -maxV, maxV);
     rocket.vy = clamp(rocket.vy, -maxV, maxV);
     rocket.x += rocket.vx * dt;
@@ -203,10 +206,10 @@
     // Generous bounds — no snap-back, just hard walls. Turbo can push to 0.74.
     const minX = 40;
     const maxX = W * 0.74;
-    if (rocket.x < minX) { rocket.x = minX; if (rocket.vx < 0) rocket.vx *= -0.4; }
-    if (rocket.x > maxX) { rocket.x = maxX; if (rocket.vx > 0) rocket.vx *= -0.4; }
-    if (rocket.y < 32)   { rocket.y = 32;   if (rocket.vy < 0) rocket.vy *= -0.4; }
-    if (rocket.y > H-32) { rocket.y = H-32; if (rocket.vy > 0) rocket.vy *= -0.4; }
+    if (rocket.x < minX) { rocket.x = minX; if (rocket.vx < 0) rocket.vx = 0; }
+    if (rocket.x > maxX) { rocket.x = maxX; if (rocket.vx > 0) rocket.vx = 0; }
+    if (rocket.y < 32)   { rocket.y = 32;   if (rocket.vy < 0) rocket.vy = 0; }
+    if (rocket.y > H-32) { rocket.y = H-32; if (rocket.vy > 0) rocket.vy = 0; }
 
     rocket.angle = clamp(rocket.vy / 700, -0.22, 0.22);
 
@@ -251,7 +254,7 @@
   }
 
   function updateAsteroids(dt, gdt) {
-    const W = RR.config.W, H = RR.config.H;
+    const H = RR.config.H;
     const mul = worldScrollMul();
     for (let i = asteroids.length - 1; i >= 0; i--) {
       const a = asteroids[i];
@@ -287,7 +290,7 @@
     }
   }
 
-  function updateBullets(dt, gdt) {
+  function updateBullets(dt) {
     const W = RR.config.W, P = RR.config.PALETTE;
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
@@ -324,7 +327,6 @@
   }
 
   function updatePickups(dt, gdt) {
-    const W = RR.config.W;
     const magnet = RR.state.magnetTime > 0;
     for (let i = pickups.length - 1; i >= 0; i--) {
       const p = pickups[i];
@@ -332,17 +334,21 @@
       p.bob += dt * 4;
       // Magnet attraction: pull pickups toward rocket.
       if (magnet) {
-        const dx = (rocket.x + 4) - p.x;
+        const dx = rocket.x - p.x;
         const dy = rocket.y - p.y;
         const d2 = dx * dx + dy * dy;
-        if (d2 < 280 * 280) {
-          const inv = 1 / Math.max(20, Math.sqrt(d2));
-          p.x += dx * inv * 280 * dt;
-          p.y += dy * inv * 280 * dt;
+        if (d2 < 60000) {
+          const force = 38000 / (d2 + 100);
+          const dist = Math.sqrt(d2) || 1;
+          p.vx += (dx / dist) * force * gdt;
+          p.vy = (p.vy || 0) + (dy / dist) * force * gdt;
+          p.y += p.vy * gdt;
         }
       }
       if (p.x < -30) { pickups.splice(i, 1); continue; }
-      if (circleHit({ x: rocket.x + 4, y: rocket.y, r: 22 }, p)) {
+      
+      // Increased pickup radius slightly since rocket hitbox was tightened
+      if (rocketHits({ ...p, r: p.r + 6 })) {
         pickups.splice(i, 1);
         collectPickup(p);
       }

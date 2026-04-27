@@ -179,7 +179,7 @@
           ctx.fillStyle = PALETTE.orange;
           ctx.beginPath(); ctx.arc(0, -12, 3, 0, TWO_PI); ctx.fill();
           break;
-        case "life":
+        case "life": {
           // Emergency life pickup: bright halo + heart to stand out when health is critical.
           const pulse = 1 + Math.sin(p.bob * 2.8) * 0.14;
           ctx.scale(pulse, pulse);
@@ -208,6 +208,7 @@
           ctx.arc(Math.cos(p.bob * 2.1) * 20, Math.sin(p.bob * 2.1) * 9, 2.4, 0, TWO_PI);
           ctx.fill();
           break;
+        }
         case "magnet":
           ctx.strokeStyle = PALETTE.pink; ctx.lineWidth = 3;
           ctx.beginPath();
@@ -272,7 +273,8 @@
       ctx.beginPath();
       for (let i = 0; i < points; i++) {
         const ang = (i / points) * TWO_PI;
-        const wob = 0.74 + 0.28 * Math.sin(a.seed + i * 1.74);
+        // Average radius is now 1.0 * a.r instead of 0.74 * a.r, matching hitbox
+        const wob = 1.0 + 0.25 * Math.sin(a.seed + i * 1.74);
         const rr = a.r * wob;
         const x = Math.cos(ang) * rr, y = Math.sin(ang) * rr;
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);

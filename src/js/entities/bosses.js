@@ -9,13 +9,11 @@
 
   let active = null;          // active boss instance
   let bossBullets = [];       // boss-fired projectiles
-  let pendingNext = -1;       // boss index that should be triggered after current level finishes
   let defeatedFlags = {};     // map id -> boolean
 
   function reset() {
     active = null;
     bossBullets.length = 0;
-    pendingNext = -1;
     defeatedFlags = {};
     RR.state.bossIndex = -1;
     RR.state.bossPhase = 0;
@@ -146,10 +144,10 @@
     if (A.attackT <= 0) {
       doAttack(A);
       const baseCd = A.cfg.type === "ufo" ? rand(0.4, 0.8)
-                   : A.cfg.type === "tech" ? rand(1.2, 1.8)
-                   : A.cfg.type === "cosmic" ? rand(0.8, 1.4)
-                   : A.cfg.type === "dread" ? rand(0.5, 1.0)
-                   : rand(0.6, 1.2);
+        : A.cfg.type === "tech" ? rand(1.2, 1.8)
+          : A.cfg.type === "cosmic" ? rand(0.8, 1.4)
+            : A.cfg.type === "dread" ? rand(0.5, 1.0)
+              : rand(0.6, 1.2);
       A.attackT = baseCd / (1 + (A.phase - 1) * 0.3);
     }
 
@@ -183,7 +181,7 @@
         bossBullets.splice(i, 1); continue;
       }
       // Hit rocket?
-      if (circleHit({ x: RR.entities.rocket.x, y: RR.entities.rocket.y, r: 14 }, b)) {
+      if (RR.entities.rocketHits(b)) {
         bossBullets.splice(i, 1);
         RR.entities.damageRocket();
       }
@@ -226,50 +224,99 @@
         }
       }
     } else if (A.cfg.type === "tech") {
-      // Orbital Bastion: Heavy snipers and slow mines
-      if (Math.random() < 0.6) {
-        // Deploy Mine
-        RR.entities.asteroids.push({
-          x: A.x - 40, y: A.y + rand(-40, 40), r: 24,
-          vx: -120, vy: rand(-20, 20), spin: rand(-1, 1), rot: 0, hp: 3, fast: false, splitter: true, seed: Math.random() * 999,
-        });
-      } else {
-        // Mega laser shot
-        const burst = A.phase === 2 ? 3 : 1;
-        for(let i=0; i<burst; i++) {
-           bossBullets.push({ x: A.x - 30, y: A.y + (i * 20 - (burst-1)*10), vx: Math.cos(aim) * 600, vy: Math.sin(aim) * 600, r: 8, life: 2.5, color: P.pink });
+      // Orbital Bastion: Area denial and laser walls
+      if (A.phase >= 1) {
+        if (Math.random() < 0.4) {
+          // Deploy a spread of 3 slow, large mines
+          for (let i = -1; i <= 1; i++) {
+            RR.entities.asteroids.push({
+              x: A.x - 40, y: A.y + i * 40, r: 28,
+              vx: -100, vy: i * 30, spin: rand(-1, 1), rot: 0, hp: 3, fast: false, splitter: true, seed: Math.random() * 999,
+            });
+          }
+        } else {
+          // Shotgun blast of fast lasers
+          for (let i = -2; i <= 2; i++) {
+            bossBullets.push({ x: A.x - 30, y: A.y, vx: Math.cos(aim + i * 0.1) * 650, vy: Math.sin(aim + i * 0.1) * 650, r: 6, life: 2.5, color: P.cyan });
+          }
+        }
+      }
+      if (A.phase >= 2 && Math.random() < 0.6) {
+        // "Laser Wall" with a random gap
+        const gapIndex = Math.floor(rand(2, 9));
+        for (let i = 0; i < 11; i++) {
+          if (i === gapIndex || i === gapIndex + 1) continue; // Leave a gap for the player to dodge through
+          bossBullets.push({
+            x: A.x - 20, y: 50 + i * (RR.config.H - 100) / 10,
+            vx: -350, vy: 0, r: 8, life: 4.0, color: P.pink
+          });
         }
       }
     } else if (A.cfg.type === "cosmic") {
-      // Anomaly: Pulsing rings and pulling gravity
-      // Passive pull is applied in update normally, but let's just make it throw strange patterns
-      const ringN = 10 + A.phase * 4;
-      A._spinT = (A._spinT || 0) + 0.3;
-      for (let i = 0; i < ringN; i++) {
-        const a = (i / ringN) * TWO_PI + A._spinT;
-        // The bullets curve inward or outward
-        bossBullets.push({ x: A.x, y: A.y, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, r: 5, life: 3.5, color: P.purple });
+      // Anomaly: Dense interlocking spirals and targeted singularities
+      A._spinT = (A._spinT || 0) + 0.35;
+      
+      // Phase 1: Dual interlocking spirals
+      const arms = A.phase >= 2 ? 4 : 2;
+      for (let i = 0; i < arms; i++) {
+        const a = A._spinT + (i * TWO_PI / arms);
+        bossBullets.push({ x: A.x, y: A.y, vx: Math.cos(a) * 220, vy: Math.sin(a) * 220, r: 7, life: 4.0, color: P.purple });
+        // Counter-rotating inner spiral
+        const b = -A._spinT + (i * TWO_PI / arms);
+        bossBullets.push({ x: A.x, y: A.y, vx: Math.cos(b) * 140, vy: Math.sin(b) * 140, r: 5, life: 5.0, color: P.pink });
       }
-      if (A.phase >= 2 && Math.random() < 0.3) {
-        // Fast targeted gravity spike
-        bossBullets.push({ x: A.x - 20, y: A.y, vx: Math.cos(aim) * 500, vy: Math.sin(aim) * 500, r: 12, life: 2.5, color: P.muted });
-      }
-    } else if (A.cfg.type === "dread") {
-      // Mothership: All-out war
-      if (A.phase >= 1) {
-        for (let i = -1; i <= 1; i++) {
-          bossBullets.push({ x: A.x - 40, y: A.y + i*30, vx: Math.cos(aim + i * 0.1) * 550, vy: Math.sin(aim + i * 0.1) * 550, r: 6, life: 2.5, color: P.red });
+
+      if (A.phase >= 2 && Math.random() < 0.4) {
+        // "Singularity Blast": A dense ring of bullets fired directly at the player's current position
+        const ringN = 12;
+        for (let i = 0; i < ringN; i++) {
+          const spread = (i / ringN) * TWO_PI;
+          bossBullets.push({ 
+            x: A.x, y: A.y, 
+            vx: Math.cos(aim) * 450 + Math.cos(spread) * 100, 
+            vy: Math.sin(aim) * 450 + Math.sin(spread) * 100, 
+            r: 8, life: 3.0, color: P.muted 
+          });
         }
       }
-      if (A.phase >= 2 && Math.random() < 0.5) {
-        // Deploy fast seeker rocks
-        RR.entities.asteroids.push({ x: A.x - 50, y: A.y + rand(-60, 60), r: 18, vx: -380, vy: rand(-100, 100), spin: rand(-3, 3), rot: 0, hp: 2, fast: true, splitter: false, seed: Math.random() * 999 });
+    } else if (A.cfg.type === "dread") {
+      // Mothership: The ultimate bullet hell
+      A._spinT = (A._spinT || 0) + 0.15; // Fast sine wave sweeper
+      
+      if (A.phase >= 1) {
+        // Sweeping heavy beams
+        const sweepAim = aim + Math.sin(A._spinT) * 0.5;
+        for (let i = -1; i <= 1; i++) {
+          bossBullets.push({ 
+            x: A.x - 40, y: A.y + i*20, 
+            vx: Math.cos(sweepAim + i * 0.05) * 600, vy: Math.sin(sweepAim + i * 0.05) * 600, 
+            r: 9, life: 3.0, color: P.red 
+          });
+        }
+      }
+      if (A.phase >= 2 && Math.random() < 0.4) {
+        // Barrage of fast seeker rocks masking a huge spread of bullets
+        RR.entities.asteroids.push({ 
+          x: A.x - 50, y: rkt.y + rand(-100, 100), r: 22, vx: -450, vy: rand(-40, 40), 
+          spin: rand(-4, 4), rot: 0, hp: 4, fast: true, splitter: false, seed: Math.random() * 999 
+        });
+        // 7-way spread
+        for (let i = -3; i <= 3; i++) {
+          bossBullets.push({ x: A.x - 40, y: A.y, vx: Math.cos(aim + i * 0.12) * 400, vy: Math.sin(aim + i * 0.12) * 400, r: 6, life: 3.5, color: P.orange });
+        }
       }
       if (A.phase >= 3) {
-        // Hellfire spiral
-        A._spinT = (A._spinT || 0) + 0.5;
-        bossBullets.push({ x: A.x - 30, y: A.y, vx: Math.cos(A._spinT) * 400, vy: Math.sin(A._spinT) * 400, r: 7, life: 3.0, color: P.yellow });
-        bossBullets.push({ x: A.x - 30, y: A.y, vx: Math.cos(A._spinT + Math.PI) * 400, vy: Math.sin(A._spinT + Math.PI) * 400, r: 7, life: 3.0, color: P.yellow });
+        // Desperation move: Chaotic Omni-directional blast + Hellfire spiral
+        const arms = 5;
+        for (let i = 0; i < arms; i++) {
+          const a = A._spinT * 2 + (i * TWO_PI / arms);
+          bossBullets.push({ x: A.x - 30, y: A.y, vx: Math.cos(a) * 350, vy: Math.sin(a) * 350, r: 8, life: 4.0, color: P.yellow });
+        }
+        if (Math.random() < 0.3) {
+          // Pincer bullets from top and bottom
+          bossBullets.push({ x: rkt.x + rand(100, 300), y: -10, vx: -200, vy: 300, r: 10, life: 4.0, color: P.red });
+          bossBullets.push({ x: rkt.x + rand(100, 300), y: RR.config.H + 10, vx: -200, vy: -300, r: 10, life: 4.0, color: P.red });
+        }
       }
     }
 
@@ -495,57 +542,160 @@
 
   function drawStation(ctx, A) {
     ctx.save();
-    // Core
-    ctx.fillStyle = "#222";
-    ctx.fillRect(-A.r*0.6, -A.r*0.8, A.r*1.2, A.r*1.6);
-    ctx.strokeStyle = A.color; ctx.lineWidth = 4;
-    ctx.strokeRect(-A.r*0.6, -A.r*0.8, A.r*1.2, A.r*1.6);
-    // Solar panels
-    ctx.fillStyle = "#114";
-    ctx.fillRect(-A.r*1.4, -A.r*0.4, A.r*0.8, A.r*0.8);
-    ctx.fillRect(A.r*0.6, -A.r*0.4, A.r*0.8, A.r*0.8);
-    ctx.strokeStyle = "#55f"; ctx.lineWidth = 2;
-    ctx.strokeRect(-A.r*1.4, -A.r*0.4, A.r*0.8, A.r*0.8);
-    ctx.strokeRect(A.r*0.6, -A.r*0.4, A.r*0.8, A.r*0.8);
-    // Glowing eye / weapon port
+    const t = performance.now() / 1000;
+    
+    // Rotating outer defense ring
+    ctx.save();
+    ctx.rotate(t * 0.4);
+    ctx.strokeStyle = "#4466ff";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, A.r * 1.4, 0, TWO_PI); ctx.stroke();
+    for (let i = 0; i < 4; i++) {
+      ctx.rotate(Math.PI / 2);
+      ctx.fillStyle = "#112244";
+      ctx.fillRect(A.r * 1.3, -A.r * 0.2, A.r * 0.4, A.r * 0.4);
+      ctx.strokeStyle = A.color;
+      ctx.strokeRect(A.r * 1.3, -A.r * 0.2, A.r * 0.4, A.r * 0.4);
+      // Blinking node lights
+      ctx.fillStyle = (Math.sin(t * 5 + i) > 0) ? A.color : "#fff";
+      ctx.beginPath(); ctx.arc(A.r * 1.5, 0, 4, 0, TWO_PI); ctx.fill();
+    }
+    ctx.restore();
+
+    // Main Bastion Core
+    ctx.fillStyle = "#0c1020";
+    ctx.beginPath();
+    ctx.moveTo(A.r * 0.8, 0);
+    ctx.lineTo(A.r * 0.5, A.r * 0.8);
+    ctx.lineTo(-A.r * 0.5, A.r * 0.8);
+    ctx.lineTo(-A.r * 0.8, 0);
+    ctx.lineTo(-A.r * 0.5, -A.r * 0.8);
+    ctx.lineTo(A.r * 0.5, -A.r * 0.8);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.strokeStyle = A.color;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Central Energy Reactor
+    ctx.fillStyle = "#050a14";
+    ctx.beginPath(); ctx.arc(0, 0, A.r * 0.5, 0, TWO_PI); ctx.fill();
     ctx.fillStyle = A.color;
-    ctx.beginPath(); ctx.arc(-A.r*0.2, 0, A.r*0.3, 0, TWO_PI); ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.beginPath(); ctx.arc(-A.r*0.2, 0, A.r*0.1, 0, TWO_PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, A.r * 0.4 + Math.sin(t * 8) * 4, 0, TWO_PI); ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath(); ctx.arc(0, 0, A.r * 0.2 + Math.sin(t * 12) * 2, 0, TWO_PI); ctx.fill();
+    
     ctx.restore();
   }
 
   function drawAnomaly(ctx, A) {
     ctx.save();
     const t = performance.now() / 1000;
-    ctx.rotate(A.angle);
-    for(let i=0; i<3; i++) {
-      ctx.rotate(t + i);
-      ctx.strokeStyle = A.color;
-      ctx.lineWidth = 4 + Math.sin(t*5 + i)*2;
-      ctx.beginPath(); ctx.ellipse(0, 0, A.r, A.r*(0.2+i*0.1), 0, 0, TWO_PI); ctx.stroke();
+    
+    // Accretion Disk (multiple layered ellipses)
+    ctx.globalCompositeOperation = "screen";
+    for (let i = 0; i < 5; i++) {
+      ctx.save();
+      ctx.rotate(t * (0.5 + i * 0.2));
+      ctx.fillStyle = `hsla(${270 + i * 15 + Math.sin(t) * 20}, 100%, 60%, 0.15)`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, A.r * (1.2 + i * 0.1), A.r * (0.3 + i * 0.05), 0, 0, TWO_PI);
+      ctx.fill();
+      ctx.restore();
     }
-    // Black hole center
-    ctx.fillStyle = "#000";
-    ctx.beginPath(); ctx.arc(0, 0, A.r*0.5 + Math.sin(t*8)*5, 0, TWO_PI); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+
+    // Pulsing event horizon aura
+    ctx.globalAlpha = 0.5 + Math.sin(t * 3) * 0.2;
+    const grad = ctx.createRadialGradient(0, 0, A.r * 0.4, 0, 0, A.r * 1.5);
+    grad.addColorStop(0, A.color);
+    grad.addColorStop(1, "transparent");
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(0, 0, A.r * 1.5, 0, TWO_PI); ctx.fill();
+
+    // The Void (Pitch Black center)
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#000000";
+    ctx.beginPath(); ctx.arc(0, 0, A.r * 0.65 + Math.sin(t * 6) * 5, 0, TWO_PI); ctx.fill();
+    
+    // Swirling singular debris inside
+    ctx.fillStyle = "#ffffff";
+    for (let i = 0; i < 3; i++) {
+      const angle = t * (4 - i) + i * TWO_PI / 3;
+      const dist = A.r * 0.4 * (0.5 + 0.5 * Math.sin(t * 2 + i));
+      ctx.beginPath(); ctx.arc(Math.cos(angle) * dist, Math.sin(angle) * dist, 3, 0, TWO_PI); ctx.fill();
+    }
+    
     ctx.restore();
   }
 
   function drawDreadnought(ctx, A) {
     ctx.save();
+    const t = performance.now() / 1000;
     ctx.rotate(A.angle);
+    
+    // Engine Trails
+    ctx.fillStyle = "#ffaa00";
+    ctx.globalAlpha = 0.6 + Math.sin(t * 20) * 0.4;
+    ctx.beginPath();
+    ctx.ellipse(-A.r * 1.1, -A.r * 0.3, A.r * 0.4 + Math.random()*10, A.r * 0.15, 0, 0, TWO_PI);
+    ctx.ellipse(-A.r * 1.1, A.r * 0.3, A.r * 0.4 + Math.random()*10, A.r * 0.15, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Wing spans (swept forward)
+    ctx.fillStyle = "#0a050a";
+    ctx.beginPath();
+    ctx.moveTo(-A.r * 0.5, 0);
+    ctx.lineTo(-A.r * 0.8, -A.r * 1.2);
+    ctx.lineTo(A.r * 0.2, -A.r * 0.9);
+    ctx.lineTo(A.r * 0.5, 0);
+    ctx.lineTo(A.r * 0.2, A.r * 0.9);
+    ctx.lineTo(-A.r * 0.8, A.r * 1.2);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.strokeStyle = "#441111";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Main Fuselage
     ctx.fillStyle = "#1a0a1a";
     ctx.beginPath();
-    ctx.moveTo(A.r, 0); ctx.lineTo(A.r*0.3, -A.r*0.8); ctx.lineTo(-A.r, -A.r*0.4);
-    ctx.lineTo(-A.r, A.r*0.4); ctx.lineTo(A.r*0.3, A.r*0.8); ctx.closePath();
+    ctx.moveTo(A.r * 1.1, 0); 
+    ctx.lineTo(A.r * 0.4, -A.r * 0.4); 
+    ctx.lineTo(-A.r, -A.r * 0.5);
+    ctx.lineTo(-A.r, A.r * 0.5); 
+    ctx.lineTo(A.r * 0.4, A.r * 0.4); 
+    ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = A.color; ctx.lineWidth = 5; ctx.stroke();
     
-    // Core Engine
+    ctx.strokeStyle = A.color; 
+    ctx.lineWidth = 4; 
+    ctx.stroke();
+    
+    // Front heavy cannon / Maw
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.moveTo(A.r * 1.1, 0);
+    ctx.lineTo(A.r * 0.6, -A.r * 0.15);
+    ctx.lineTo(A.r * 0.6, A.r * 0.15);
+    ctx.closePath();
+    ctx.fill();
+
+    // Core Engine / Eye
     ctx.fillStyle = A.color;
-    ctx.beginPath(); ctx.arc(-A.r*0.6, 0, A.r*0.3, 0, TWO_PI); ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.beginPath(); ctx.arc(-A.r*0.6, 0, A.r*0.15 + Math.sin(performance.now()/100)*5, 0, TWO_PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(-A.r * 0.4, 0, A.r * 0.35, 0, TWO_PI); ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(-A.r * 0.4, 0, A.r * 0.15 + Math.sin(t * 10) * 4, 0, TWO_PI); ctx.fill();
+    
+    // Warning lights along the wings
+    ctx.fillStyle = (Math.floor(t * 4) % 2 === 0) ? "#ff0000" : "#550000";
+    ctx.beginPath(); ctx.arc(-A.r * 0.6, -A.r * 1.0, 5, 0, TWO_PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(-A.r * 0.6, A.r * 1.0, 5, 0, TWO_PI); ctx.fill();
+
     ctx.restore();
   }
 

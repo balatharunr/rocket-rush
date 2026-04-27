@@ -34,15 +34,15 @@
     rocket: {
       startX: 132,
       homeX: 0.32,               // fraction of W: where rocket gently drifts back to without input
-      thrust: 560,
-      thrustTurbo: 900,
-      drag: 0.960,
-      dragTurbo: 0.982,
-      maxV: 320,
-      maxVTurbo: 540,
-      forwardBoost: 420,         // forward shove during turbo
+      thrust: 2400,
+      thrustTurbo: 3600,
+      drag: 0.850,
+      dragTurbo: 0.880,
+      maxV: 400,
+      maxVTurbo: 650,
+      forwardBoost: 600,         // forward shove during turbo
       // Boost is a hard-limited meter (0..1). Spend → recharge.
-      heatGainTurbo: 0.42,       // ~2.4s of full boost on a fresh tank
+      heatGainTurbo: 0.35,       // ~2.8s of full boost on a fresh tank
       heatCool: 0.32,            // ~3.1s to fully recharge
       heatLockoutBelow: 0.25,    // when overheated, must cool down to this before turbo re-engages
       shieldDecay: 1.4,

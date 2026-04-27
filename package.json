@@ -2,7 +2,7 @@
   "name": "rocket-rush",
   "version": "1.0.0",
   "description": "A retro neon arcade space runner",
-  "main": "src/index.html",
+  "main": "index.html",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",

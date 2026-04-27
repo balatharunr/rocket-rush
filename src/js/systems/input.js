@@ -35,7 +35,7 @@
            "KeyW", "KeyA", "KeyS", "KeyD", "KeyJ", "KeyZ", "KeyB", "KeyX"
           ].includes(e.code)) e.preventDefault();
 
-      if (e.code === "KeyP")     RR.game.togglePause();
+      if (e.code === "KeyP") RR.game.togglePause();
       else if (e.code === "KeyM") RR.game.toggleMute();
       else if (e.code === "KeyR" && (RR.state.mode === "playing" || RR.state.mode === "paused" || RR.state.mode === "gameover" || RR.state.mode === "victory")) RR.game.reset();
       else if (e.code === "Enter" && (RR.state.mode === "menu" || RR.state.mode === "gameover" || RR.state.mode === "victory")) {
