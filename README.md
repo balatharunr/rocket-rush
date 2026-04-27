@@ -4,12 +4,14 @@
 
 **Dodge. Blast. Survive. Repeat.** A high-speed, adrenaline-pumping retro neon arcade shooter powered by pure vanilla JavaScript.
 
-[![Play Live Demo](https://img.shields.io/badge/PLAY_LIVE_DEMO-%2300FFAA.svg?style=for-the-badge&logo=vercel&logoColor=black)](https://rocket-rush-game.vercel.app/)
+[![Play Live Demo](https://img.shields.io/badge/PLAY_LIVE_DEMO-00EAFF?style=for-the-badge&logo=vercel&logoColor=black)](https://rocket-rush-game.vercel.app/)
 
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-![Zero Dependencies](https://img.shields.io/badge/Dependencies-ZERO-ff0055?style=for-the-badge)
+<br>
+
+![HTML5](https://img.shields.io/badge/HTML5-121212?style=for-the-badge&logo=html5&logoColor=E34F26)
+![JavaScript](https://img.shields.io/badge/JavaScript-121212?style=for-the-badge&logo=javascript&logoColor=F7DF1E)
+![CSS3](https://img.shields.io/badge/CSS3-121212?style=for-the-badge&logo=css3&logoColor=1572B6)
+![Zero Dependencies](https://img.shields.io/badge/Dependencies-ZERO-FF0055?style=for-the-badge)
 
 </div>
 
@@ -25,6 +27,7 @@
 
 ## 🎮 Gameplay in Action
 
+*(Drop a high-quality 60fps `.gif` or `.mp4` here showing off the neon visuals and fast gameplay)*
 
 ---
 
