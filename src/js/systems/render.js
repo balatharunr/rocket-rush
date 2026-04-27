@@ -168,11 +168,12 @@
   function drawStars(ctx) {
     const stars = RR.entities.stars;
     const PALETTE = RR.config.PALETTE;
+    const rocket = RR.entities.rocket;
     const fxMotion = RR.fx.motionLines || 0;
     const starHue = PALETTE._starHue || PALETTE.white;
     const starAccent = PALETTE._starAccent || PALETTE.cyan;
 
-    if (fxMotion <= 0.01) {
+    if (!rocket.turbo) {
       // Normal: draw stars as small dots (fast path)
       for (const s of stars) {
         const tw = 0.45 + Math.sin(s.tw) * 0.25 + s.z * 0.18;
@@ -186,7 +187,7 @@
       for (const s of stars) {
         const tw = 0.45 + Math.sin(s.tw) * 0.25 + s.z * 0.18;
         ctx.globalAlpha = clamp(tw, 0.15, 1);
-        // Streak length scales with depth (z) and turbo amount
+        // Streak length scales with depth (z) and turbo motion intensity
         const streak = fxMotion * (10 + s.z * 18);
         ctx.strokeStyle = s.z > 2.2 ? starAccent : starHue;
         ctx.lineWidth = s.size;
@@ -203,6 +204,7 @@
     // Stars now do all the speed-streak work in drawStars; this is a no-op kept
     // for backward compatibility and possible future overlays.
     if (RR.config.lowDetail) return;
+    if (!RR.entities.rocket.turbo) return;
     const fxMotion = RR.fx.motionLines;
     if (fxMotion <= 0.05) return;
     const { W, H, PALETTE } = RR.config;
