@@ -116,34 +116,51 @@
   function drawStars(ctx) {
     const stars = RR.entities.stars;
     const PALETTE = RR.config.PALETTE;
-    for (const s of stars) {
-      const tw = 0.45 + Math.sin(s.tw) * 0.25 + s.z * 0.18;
-      ctx.globalAlpha = clamp(tw, 0.15, 1);
-      ctx.fillStyle = s.z > 2.2 ? PALETTE.cyan : PALETTE.white;
-      ctx.fillRect(Math.round(s.x), Math.round(s.y), s.size, s.size);
+    const fxMotion = RR.fx.motionLines || 0;
+    
+    if (fxMotion <= 0.01) {
+      // Normal: draw stars as small dots (fast path)
+      for (const s of stars) {
+        const tw = 0.45 + Math.sin(s.tw) * 0.25 + s.z * 0.18;
+        ctx.globalAlpha = clamp(tw, 0.15, 1);
+        ctx.fillStyle = s.z > 2.2 ? PALETTE.cyan : PALETTE.white;
+        ctx.fillRect(Math.round(s.x), Math.round(s.y), s.size, s.size);
+      }
+    } else {
+      // Turbo: draw stars as elongated streaks for that classic warp-speed feel
+      ctx.lineCap = "round";
+      for (const s of stars) {
+        const tw = 0.45 + Math.sin(s.tw) * 0.25 + s.z * 0.18;
+        ctx.globalAlpha = clamp(tw, 0.15, 1);
+        // Streak length scales with depth (z) and turbo amount
+        const streak = fxMotion * (10 + s.z * 18);
+        ctx.strokeStyle = s.z > 2.2 ? PALETTE.cyan : PALETTE.white;
+        ctx.lineWidth = s.size;
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(s.x - streak, s.y);
+        ctx.stroke();
+      }
     }
     ctx.globalAlpha = 1;
   }
 
   function drawMotionLines(ctx) {
+    // Stars now do all the speed-streak work in drawStars; this is a no-op kept
+    // for backward compatibility and possible future overlays.
     if (RR.config.lowDetail) return;
-    const turbo = RR.entities.rocket.turbo;
-    if (!turbo) return;
+    const fxMotion = RR.fx.motionLines;
+    if (fxMotion <= 0.05) return;
     const { W, H, PALETTE } = RR.config;
     ctx.save();
-    ctx.globalAlpha = 0.28;
-    ctx.strokeStyle = PALETTE.cyan;
-    ctx.lineWidth = 1;
-    const t = performance.now() * 0.003;
-    for (let i = 0; i < 16; i++) {
-      const y = (i * (H / 16) + (t * 60 % H)) % H;
-      const len = 28 + ((i * 53 + (t * 800 | 0)) % 80);
-      const x = (i * 71 + (t * 1200 | 0)) % W;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x - len, y);
-      ctx.stroke();
-    }
+    // Subtle vignette tint at high boost for extra speed feel
+    ctx.globalAlpha = fxMotion * 0.10;
+    const grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0,    PALETTE.cyan);
+    grad.addColorStop(0.35, "rgba(0,0,0,0)");
+    grad.addColorStop(1,    "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
 
@@ -367,14 +384,17 @@
       ctx.restore();
     }
 
-    // Magnet aura
+    // Magnet aura — visual range matches actual attraction radius (180px)
     if (RR.state.magnetTime > 0) {
       ctx.save();
+      const t = performance.now() / 110;
       ctx.strokeStyle = PALETTE.pink;
-      ctx.globalAlpha = 0.18 + Math.sin(performance.now() / 110) * 0.06;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0, 0, 60, 0, TWO_PI); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, 0, 80, 0, TWO_PI); ctx.stroke();
+      ctx.lineWidth = 1.5;
+      // Outer ring at the actual gameplay range, plus an inner pulse
+      ctx.globalAlpha = 0.14 + Math.sin(t) * 0.05;
+      ctx.beginPath(); ctx.arc(0, 0, 180, 0, TWO_PI); ctx.stroke();
+      ctx.globalAlpha = 0.22 + Math.sin(t * 1.3) * 0.08;
+      ctx.beginPath(); ctx.arc(0, 0, 80 + Math.sin(t * 0.8) * 6, 0, TWO_PI); ctx.stroke();
       ctx.restore();
     }
 
