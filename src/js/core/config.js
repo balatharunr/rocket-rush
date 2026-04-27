@@ -10,6 +10,7 @@
   const W = 960;
   const H = 540;
 
+  // Active palette — swapped when map changes. Derived from MAPS[mapId].palette.
   const PALETTE = {
     skyTop:  "#050316",
     skyMid:  "#09062b",
@@ -28,6 +29,73 @@
     boss:    "#ff8a3c",
     bossDk:  "#7a2b00",
   };
+
+  // ─── Space Maps ───────────────────────────────────────────────────────────
+  // Each map defines its own visual personality. The active map's palette
+  // is copied into RR.config.PALETTE at runtime so all renderers see it.
+  const MAPS = [
+    {
+      id: "asteroid-belt",
+      name: "Asteroid Belt",
+      desc: "The classical frontier — scattered rocks, swirling nebula, timeless.",
+      // Visual identity
+      palette: {
+        skyTop:  "#050316",
+        skyMid:  "#09062b",
+        skyBot:  "#130d3f",
+        nebulaColors: ["#ff4fd8", "#36f5ff", "#b562ff"],
+        nebulaCount: 3,
+        nebulaBrightness: 0.22,
+        starHue: "#fff7e8",   // warm white
+        starAccent: "#36f5ff", // cyan tint on close stars
+        special: "none",
+        auroraColor: null,
+        dustColor: null,
+        starCountMult: 1.0,
+        starTwinkleMult: 1.0,
+      },
+    },
+    {
+      id: "nebula-storm",
+      name: "Nebula Storm",
+      desc: "A plasma tempest — vivid aurora curtains, solar dust, electromagnetic chaos.",
+      palette: {
+        skyTop:  "#0b0228",
+        skyMid:  "#1a0545",
+        skyBot:  "#2d0a5e",
+        nebulaColors: ["#ff2d78", "#9b59ff", "#00d4ff", "#ff8c00"],
+        nebulaCount: 6,
+        nebulaBrightness: 0.38,
+        starHue: "#e8d4ff",   // lavender white
+        starAccent: "#00d4ff", // electric blue accent
+        special: "aurora",
+        auroraColor: "#00d4ff",
+        dustColor: "#ff8c0044",
+        starCountMult: 0.7,
+        starTwinkleMult: 1.4,
+      },
+    },
+    {
+      id: "dark-void",
+      name: "Dark Void",
+      desc: "The cosmic depths — ancient star nurseries, eerie silence, hidden threats.",
+      palette: {
+        skyTop:  "#020108",
+        skyMid:  "#040215",
+        skyBot:  "#080428",
+        nebulaColors: ["#1a0038", "#002244", "#001a33"],
+        nebulaCount: 1,
+        nebulaBrightness: 0.08,
+        starHue: "#c8e8ff",   // icy blue-white
+        starAccent: "#36f5ff", // teal
+        special: "void",
+        auroraColor: null,
+        dustColor: null,
+        starCountMult: 1.8,
+        starTwinkleMult: 0.5,
+      },
+    },
+  ];
 
   // Tunable gameplay values. Centralized so balance is easy.
   const TUNE = {
@@ -94,11 +162,31 @@
     { id: "mothership", type: "dread",     atLevel: 20, name: "XENON DREADNOUGHT",title: "The Final Threat",          taunt: "YOUR JOURNEY ENDS HERE.",          hp: 250, color: PALETTE.red, final: true },
   ];
 
+  // Apply a map's palette into the live PALETTE so all renderers pick it up.
+  function applyMapPalette(mapId) {
+    const map = MAPS[mapId] || MAPS[0];
+    const p = map.palette;
+    PALETTE.skyTop = p.skyTop;
+    PALETTE.skyMid = p.skyMid;
+    PALETTE.skyBot = p.skyBot;
+    PALETTE._nebulaColors = p.nebulaColors;
+    PALETTE._nebulaCount = p.nebulaCount;
+    PALETTE._nebulaBrightness = p.nebulaBrightness;
+    PALETTE._starHue = p.starHue;
+    PALETTE._starAccent = p.starAccent;
+    PALETTE._special = p.special;
+    PALETTE._auroraColor = p.auroraColor;
+    PALETTE._dustColor = p.dustColor;
+    PALETTE._starCountMult = p.starCountMult;
+    PALETTE._starTwinkleMult = p.starTwinkleMult;
+  }
+
   RR.config = {
     W, H,
     PALETTE,
     TUNE,
     BOSSES,
+    MAPS,
     STORAGE_KEY: "retroRocketRushBestV2",
     LEVEL_FOR_VICTORY: 20,
     // Filled at runtime by render setup:
@@ -106,5 +194,7 @@
     cssWidth: W,
     cssHeight: H,
     lowDetail: false,
+    activeMapId: 0,
+    applyMapPalette,
   };
 })(typeof window !== "undefined" ? window : this);

@@ -18,7 +18,7 @@
 
   function ensureBgGradient(ctx) {
     const { W, H, PALETTE } = RR.config;
-    const key = `${W}x${H}`;
+    const key = `${W}x${H}_${PALETTE.skyTop}_${PALETTE.skyBot}`;
     if (bgGradient && bgGradientKey === key) return bgGradient;
     bgGradient = ctx.createLinearGradient(0, 0, 0, H);
     bgGradient.addColorStop(0,    PALETTE.skyTop);
@@ -90,24 +90,76 @@
   }
 
   function drawNebula(ctx) {
-    // Subtle, organic nebula clouds — replaces the old "4 stripes" bug.
     if (RR.config.lowDetail) return;
     const { W, H, PALETTE } = RR.config;
     const t = performance.now() / 1000;
-    const colors = [PALETTE.pink, PALETTE.cyan, PALETTE.purple];
+    const colors = PALETTE._nebulaColors || [PALETTE.pink, PALETTE.cyan, PALETTE.purple];
+    const count = PALETTE._nebulaCount || 3;
+    const brightness = PALETTE._nebulaBrightness || 0.22;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    for (let i = 0; i < 3; i++) {
-      const cx = (W * (0.2 + i * 0.3) + Math.sin(t * 0.13 + i) * 60) % (W + 200);
-      const cy = H * (0.3 + 0.18 * Math.sin(t * 0.21 + i * 1.7));
-      const r = 220 + Math.sin(t * 0.4 + i) * 40;
+    for (let i = 0; i < count; i++) {
+      const cx = (W * (0.15 + i * (0.65 / Math.max(count - 1, 1))) + Math.sin(t * 0.13 + i) * 70) % (W + 200);
+      const cy = H * (0.25 + 0.22 * Math.sin(t * 0.21 + i * 1.7));
+      const r = 200 + Math.sin(t * 0.4 + i) * 55;
+      const alphaHex = Math.floor(brightness * 255).toString(16).padStart(2, "0");
       const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, r);
-      grad.addColorStop(0,   colors[i] + "33");
-      grad.addColorStop(0.5, colors[i] + "11");
+      grad.addColorStop(0,   colors[i % colors.length] + alphaHex);
+      grad.addColorStop(0.5, colors[i % colors.length] + Math.floor(brightness * 0.5 * 255).toString(16).padStart(2, "0"));
       grad.addColorStop(1,   "rgba(0,0,0,0)");
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Map-specific special effects
+    const special = PALETTE._special;
+    if (special === "aurora") drawAuroraCurtains(ctx, t);
+    if (special === "void") drawVoidRays(ctx, t);
+  }
+
+  function drawAuroraCurtains(ctx, t) {
+    // Glowing vertical aurora curtains for Nebula Storm
+    const { W, H, PALETTE } = RR.config;
+    const color = PALETTE._auroraColor || PALETTE.cyan;
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    for (let i = 0; i < 4; i++) {
+      const cx = W * (0.1 + i * 0.25) + Math.sin(t * 0.08 + i * 1.3) * 80;
+      const w = 60 + Math.sin(t * 0.15 + i) * 25;
+      const h = H * (0.3 + Math.sin(t * 0.22 + i * 0.7) * 0.15);
+      const grad = ctx.createLinearGradient(cx, H * 0.1, cx, H * 0.1 + h);
+      grad.addColorStop(0, "rgba(0,0,0,0)");
+      grad.addColorStop(0.3, color + "22");
+      grad.addColorStop(0.7, color + "18");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(cx - w / 2, H * 0.1, w, h);
+    }
+    ctx.restore();
+  }
+
+  function drawVoidRays(ctx, t) {
+    // Subtle cosmic rays from top for Dark Void
+    const { W, H, PALETTE } = RR.config;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 3; i++) {
+      const cx = W * (0.2 + i * 0.35) + Math.sin(t * 0.05 + i * 2.1) * 120;
+      const rayW = 4 + Math.sin(t * 0.3 + i) * 2;
+      const rayH = H * (0.4 + Math.sin(t * 0.18 + i) * 0.2);
+      const grad = ctx.createLinearGradient(cx, 0, cx + 30, rayH);
+      grad.addColorStop(0, PALETTE._starAccent + "15");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(cx - rayW / 2, 0);
+      ctx.lineTo(cx + rayW / 2 + 30, rayH);
+      ctx.lineTo(cx + rayW / 2, rayH);
+      ctx.lineTo(cx - rayW / 2 - 20, 0);
+      ctx.closePath();
       ctx.fill();
     }
     ctx.restore();
@@ -117,13 +169,15 @@
     const stars = RR.entities.stars;
     const PALETTE = RR.config.PALETTE;
     const fxMotion = RR.fx.motionLines || 0;
-    
+    const starHue = PALETTE._starHue || PALETTE.white;
+    const starAccent = PALETTE._starAccent || PALETTE.cyan;
+
     if (fxMotion <= 0.01) {
       // Normal: draw stars as small dots (fast path)
       for (const s of stars) {
         const tw = 0.45 + Math.sin(s.tw) * 0.25 + s.z * 0.18;
         ctx.globalAlpha = clamp(tw, 0.15, 1);
-        ctx.fillStyle = s.z > 2.2 ? PALETTE.cyan : PALETTE.white;
+        ctx.fillStyle = s.z > 2.2 ? starAccent : starHue;
         ctx.fillRect(Math.round(s.x), Math.round(s.y), s.size, s.size);
       }
     } else {
@@ -134,7 +188,7 @@
         ctx.globalAlpha = clamp(tw, 0.15, 1);
         // Streak length scales with depth (z) and turbo amount
         const streak = fxMotion * (10 + s.z * 18);
-        ctx.strokeStyle = s.z > 2.2 ? PALETTE.cyan : PALETTE.white;
+        ctx.strokeStyle = s.z > 2.2 ? starAccent : starHue;
         ctx.lineWidth = s.size;
         ctx.beginPath();
         ctx.moveTo(s.x, s.y);

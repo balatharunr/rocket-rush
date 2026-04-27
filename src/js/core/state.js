@@ -25,6 +25,7 @@
     bossDefeatedT: 0,
     fps: 60,
     best: 0,
+    mapId: 0,           // index into RR.config.MAPS
   };
 
   // Effects / timers that aren't tied to a single entity.
