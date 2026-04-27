@@ -67,7 +67,7 @@ jobs:
       - name: Check file structure
         run: |
           echo "Validating project structure..."
-          test -f src/index.html || exit 1
+          test -f index.html || exit 1
           test -f src/css/styles.css || exit 1
           test -f src/js/utils.js || exit 1
           test -f src/js/core/config.js || exit 1
