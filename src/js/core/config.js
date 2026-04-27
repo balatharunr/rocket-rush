@@ -45,7 +45,7 @@
       heatGainTurbo: 0.35,       // ~2.8s of full boost on a fresh tank
       heatCool: 0.32,            // ~3.1s to fully recharge
       heatLockoutBelow: 0.25,    // when overheated, must cool down to this before turbo re-engages
-      shieldDecay: 1.4,
+      shieldDecay: 0.2,          // much slower shield decay so it feels like a lasting powerup
       bulletCooldown: 0.18,
       bulletSpeed: 760,
       restoringForce: 1.6,       // soft pull-back to homeX when not boosting (no snap)

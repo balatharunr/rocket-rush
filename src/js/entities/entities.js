@@ -328,21 +328,30 @@
 
   function updatePickups(dt, gdt) {
     const magnet = RR.state.magnetTime > 0;
+    const MAGNET_RANGE = 180;
+    const MAGNET_RANGE_SQ = MAGNET_RANGE * MAGNET_RANGE;
     for (let i = pickups.length - 1; i >= 0; i--) {
       const p = pickups[i];
       p.x += p.vx * gdt;
       p.bob += dt * 4;
-      // Magnet attraction: pull pickups toward rocket.
+      // Magnet attraction: pull pickups toward rocket if within range.
       if (magnet) {
         const dx = rocket.x - p.x;
         const dy = rocket.y - p.y;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < 60000) {
-          const force = 38000 / (d2 + 100);
-          const dist = Math.sqrt(d2) || 1;
-          p.vx += (dx / dist) * force * gdt;
-          p.vy = (p.vy || 0) + (dy / dist) * force * gdt;
-          p.y += p.vy * gdt;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < MAGNET_RANGE_SQ && distSq > 1) {
+          const dist = Math.sqrt(distSq);
+          // Constant strong pull that overpowers leftward scroll velocity.
+          // Slight ramp-up toward the center for a satisfying snap.
+          const t = 1 - (dist / MAGNET_RANGE);   // 0 at edge, 1 at center
+          const pullSpeed = 420 + 280 * t;
+          // Directional position update — never overshoots, no momentum buildup
+          p.x += (dx / dist) * pullSpeed * dt;
+          p.y += (dy / dist) * pullSpeed * dt;
+          // Aggressively damp residual velocity so pickups don't fight the magnet
+          const damp = Math.pow(0.18, dt);
+          p.vx *= damp;
+          p.vy = (p.vy || 0) * damp;
         }
       }
       if (p.x < -30) { pickups.splice(i, 1); continue; }

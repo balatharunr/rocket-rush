@@ -77,6 +77,14 @@
     fx.flash = Math.max(0, fx.flash - dt);
     fx.slowMo = Math.max(0, fx.slowMo - dt);
     fx.levelToastCooldown = Math.max(0, fx.levelToastCooldown - dt);
+    
+    // Smoothly animate motionLines based on turbo
+    const isTurbo = RR.entities && RR.entities.rocket && RR.entities.rocket.turbo;
+    if (isTurbo) {
+      fx.motionLines = Math.min(1, fx.motionLines + dt * 2.5);
+    } else {
+      fx.motionLines = Math.max(0, fx.motionLines - dt * 1.5);
+    }
   }
 
   function clear() {
