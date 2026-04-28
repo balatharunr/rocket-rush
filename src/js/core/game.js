@@ -5,7 +5,7 @@
 (function (root) {
   "use strict";
   const RR = (root.RR = root.RR || {});
-  const { clamp, pad } = RR.utils;
+  const { pad } = RR.utils;
 
   let lastTime = 0;
   let fpsAcc = 0;
@@ -71,6 +71,7 @@
     st.mode = "playing";
     st.score = 0;
     st.lives = 3;
+    st.zone = 1;
     st.level = 1;
     st.distance = 0;
     st.combo = 0;
@@ -83,6 +84,9 @@
     st.multishotTime = 0;
     st.bossIndex = -1;
     st.bossPhase = 0;
+    st.wormholeT = 0;
+    st.wormholeDestZone = 0;
+    st.warpT = 0;
     RR.fx.shake = 0; RR.fx.flash = 0; RR.fx.slowMo = 0;
     RR.config.applyMapPalette(st.mapId);
     RR.entities.resetRocket();
@@ -149,6 +153,15 @@
     setTimeout(() => RR.ui.showVictory(), 1100);
   }
 
+  function comingSoon() {
+    const st = RR.state;
+    st.mode = "comingSoon";
+    if (st.score > st.best) { st.best = st.score | 0; RR.saveBest(); }
+    RR.audio.stopMusic();
+    RR.audio.sfx.victory();
+    setTimeout(() => RR.ui.showComingSoon(), 900);
+  }
+
   // ───── Score ─────
   function addScore(amount, label, x, y, color) {
     const st = RR.state;
@@ -162,7 +175,7 @@
   // ───── Update ─────
   function update(dt) {
     const st = RR.state;
-    if (st.mode !== "playing" && st.mode !== "bossIntro" && st.mode !== "bossFight" && st.mode !== "bossDefeated") {
+    if (st.mode !== "playing" && st.mode !== "bossIntro" && st.mode !== "bossFight" && st.mode !== "bossDefeated" && st.mode !== "wormhole" && st.mode !== "warp") {
       // Still tick effects so background animates on menu.
       RR.effects.update(dt);
       return;
@@ -188,13 +201,20 @@
       }
     }
 
-    RR.entities.updateRocket(dt);
-    RR.entities.updateStars(dt, gdt);
-    RR.entities.updateAsteroids(dt, gdt);
-    RR.entities.updateBullets(dt, gdt);
-    RR.entities.updatePickups(dt, gdt);
-
-    RR.spawn.update(dt, gdt);
+    const inTransition = st.mode === "wormhole" || st.mode === "warp";
+    if (st.mode === "warp") {
+      RR.fx.motionLines = 1;
+      RR.entities.updateStars(dt, gdt * 6);
+    } else {
+      RR.entities.updateRocket(dt);
+      RR.entities.updateStars(dt, gdt);
+    }
+    if (!inTransition) {
+      RR.entities.updateAsteroids(dt, gdt);
+      RR.entities.updateBullets(dt, gdt);
+      RR.entities.updatePickups(dt, gdt);
+      RR.spawn.update(dt, gdt);
+    }
     RR.bosses.update(dt, gdt);
     RR.effects.update(dt);
 
@@ -235,6 +255,6 @@
   }
 
   RR.game = {
-    boot, reset, pause, resume, togglePause, toggleMute, end, victory, addScore, resize,
+    boot, reset, pause, resume, togglePause, toggleMute, end, victory, comingSoon, addScore, resize,
   };
 })(typeof window !== "undefined" ? window : this);

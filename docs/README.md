@@ -12,6 +12,9 @@ Add documentation files here, such as:
 - Design documents
 - Changelog
 
+Current gameplay architecture notes:
+- `gameplay-structure.md` - folder structure and extension workflow for zones, bosses, and abilities.
+
 ## Guidelines
 
 - Use Markdown (.md) files for documentation

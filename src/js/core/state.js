@@ -9,6 +9,7 @@
     mode: "menu",       // menu | playing | paused | gameover | victory | bossIntro | bossFight | bossDefeated
     score: 0,
     lives: 3,
+    zone: 1,
     level: 1,
     distance: 0,
     combo: 0,
@@ -23,6 +24,9 @@
     bossPhase: 0,
     bossIntroT: 0,
     bossDefeatedT: 0,
+    wormholeT: 0,
+    wormholeDestZone: 0,
+    warpT: 0,
     fps: 60,
     best: 0,
     mapId: 0,           // index into RR.config.MAPS

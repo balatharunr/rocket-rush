@@ -9,8 +9,12 @@ describe('Config', () => {
   let config;
 
   beforeEach(() => {
+    jest.resetModules();
+    global.RR = {};
     // Load the config module
     require('../src/js/core/config.js');
+    require('../src/js/content/bosses/zone-1-bosses.js');
+    require('../src/js/content/bosses/zone-2-bosses.js');
     config = RR.config;
   });
 
@@ -58,6 +62,6 @@ describe('Config', () => {
 
   test('should have victory level', () => {
     expect(config.LEVEL_FOR_VICTORY).toBeDefined();
-    expect(config.LEVEL_FOR_VICTORY).toBe(20);
+    expect(config.LEVEL_FOR_VICTORY).toBe(40);
   });
 });
