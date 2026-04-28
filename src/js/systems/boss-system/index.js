@@ -503,7 +503,7 @@
           choose([A.color, "#fff", RR.config.PALETTE.orange, RR.config.PALETTE.yellow])
         );
         RR.effects.shake(4);
-        if (i % 3 === 0) RR.audio.sfx.boom();
+        if (i % 3 === 0) RR.audio.sfx.blast();
       }, (i / count) * duration);
     }
 

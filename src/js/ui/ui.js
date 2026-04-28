@@ -45,26 +45,10 @@
     RR.state.mode = "menu";
     showOverlay();
     const muted = RR.audio.isMuted();
-    const maps = RR.config.MAPS;
-    const selectedMapId = RR.state.mapId;
-
-    // Build map selector HTML
-    const mapCardsHtml = maps.map((m, i) => `
-      <div class="map-card${i === selectedMapId ? ' selected' : ''}" data-map-id="${i}">
-        <div class="map-name">${m.name}</div>
-        <div class="map-desc">${m.desc}</div>
-      </div>
-    `).join("");
 
     RR.dom.modal.innerHTML = `
       <h1>Rocket Rush</h1>
       <h2>Galactic Threat Edition</h2>
-
-      <!-- Map Selection -->
-      <div class="map-selector">
-        <div class="map-label">SELECT ZONE</div>
-        <div class="map-grid">${mapCardsHtml}</div>
-      </div>
 
       <p class="mission">Pilot the Starling-7 into the outer belt. Dodge, blast, and bomb your way past <strong>5 Cosmic Threats</strong> to face the ultimate entity, the <strong>Xenon Dreadnought</strong>.</p>
       <div class="kbd-grid">
@@ -91,21 +75,6 @@
         <button class="secondary muteLabel" id="menuMuteBtn">Sound: ${muted ? "Off" : "On"}</button>
       </div>
       <p class="tip">Tip: <strong>TURBO</strong> makes everything faster — including the danger.</p>`;
-
-    // Map selection logic
-    document.querySelectorAll(".map-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        const id = parseInt(card.dataset.mapId, 10);
-        RR.state.mapId = id;
-        RR.config.applyMapPalette(id);
-        RR.entities.initStars();
-        RR.render.rebuildCaches();
-        // Update visual selection
-        document.querySelectorAll(".map-card").forEach((c) => c.classList.remove("selected"));
-        card.classList.add("selected");
-        RR.ui.toast(maps[id].name.toUpperCase());
-      });
-    });
 
     document.getElementById("menuStartBtn").addEventListener("click", () => { RR.audio.ensure(); RR.game.reset(); });
     document.getElementById("menuMuteBtn").addEventListener("click", RR.game.toggleMute);
