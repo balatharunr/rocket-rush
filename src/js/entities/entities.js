@@ -27,14 +27,17 @@
 
   function initStars() {
     stars.length = 0;
-    const { W, H } = RR.config;
-    const N = RR.config.lowDetail ? 64 : RR.config.TUNE.perf.starCount;
+    const { W, H, PALETTE, TUNE } = RR.config;
+    const baseN = RR.config.lowDetail ? 64 : TUNE.perf.starCount;
+    const mult = PALETTE._starCountMult || 1.0;
+    const N = Math.round(baseN * mult);
+    const twMult = PALETTE._starTwinkleMult || 1.0;
     for (let i = 0; i < N; i++) {
       stars.push({
         x: Math.random() * W,
         y: Math.random() * H,
         z: Math.random() * 2.6 + 0.3,    // depth: 0.3 (far) .. 2.9 (near)
-        tw: Math.random() * TWO_PI,
+        tw: Math.random() * TWO_PI * twMult,
         size: Math.random() < 0.10 ? 2 : 1,
       });
     }

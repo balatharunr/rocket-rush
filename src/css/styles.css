@@ -206,6 +206,26 @@ button.secondary {
 .mission { color: var(--green); text-shadow: 0 0 8px rgba(120,255,122,.5); }
 .tip { font-size: 12px; color: var(--muted); }
 
+/* Map selector */
+.map-selector { margin: 12px auto 14px; }
+.map-label { font-size: clamp(10px, 1.4vmin, 12px); color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.map-grid { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.map-card {
+  flex: 1 1 140px;
+  max-width: 200px;
+  padding: 10px 10px;
+  border: 2px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  background: rgba(0,0,0,.28);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 80ms ease;
+  text-align: center;
+}
+.map-card:hover { border-color: rgba(54,245,255,.5); background: rgba(54,245,255,.08); transform: translateY(-1px); }
+.map-card.selected { border-color: var(--cyan); background: rgba(54,245,255,.14); box-shadow: 0 0 14px rgba(54,245,255,.28); }
+.map-name { font-weight: 800; font-size: clamp(11px, 1.5vmin, 13px); color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.map-desc { font-size: clamp(9px, 1.1vmin, 10px); color: var(--muted); line-height: 1.35; }
+
 /* ─── Bottom bar / status pills ─── */
 .bottombar {
   font-size: clamp(10px, 1.4vmin, 12px);

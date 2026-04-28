@@ -28,6 +28,8 @@
       if (document.hidden && RR.state.mode === "playing") pause();
     });
 
+    // Apply default map palette before first render
+    RR.config.applyMapPalette(RR.state.mapId);
     resize();
     RR.entities.initStars();
     RR.bosses.reset();
@@ -86,6 +88,7 @@
     st.wormholeDestZone = 0;
     st.warpT = 0;
     RR.fx.shake = 0; RR.fx.flash = 0; RR.fx.slowMo = 0;
+    RR.config.applyMapPalette(st.mapId);
     RR.entities.resetRocket();
     RR.entities.clearAll();
     RR.entities.initStars();
