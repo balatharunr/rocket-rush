@@ -205,7 +205,9 @@
 
   // Apply a map's palette into the live PALETTE so all renderers pick it up.
   function applyMapPalette(mapId) {
-    const map = MAPS[mapId] || MAPS[0];
+    const normalizedMapId = Number.isInteger(mapId) && mapId >= 0 && mapId < MAPS.length ? mapId : 0;
+    const map = MAPS[normalizedMapId] || MAPS[0];
+    RR.config.activeMapId = normalizedMapId;
     const p = map.palette;
     PALETTE.skyTop = p.skyTop;
     PALETTE.skyMid = p.skyMid;
@@ -225,6 +227,7 @@
   RR.config = {
     W, H,
     PALETTE,
+    MAPS,
     TUNE,
     BOSSES,
     BOSS_ZONES,
