@@ -127,9 +127,26 @@
     document.getElementById("menuBtn").addEventListener("click", showMenu);
   }
 
+  function showComingSoon() {
+    showOverlay();
+    const st = RR.state;
+    if (st.score > st.best) { st.best = st.score | 0; RR.saveBest(); }
+    RR.dom.modal.innerHTML = `
+      <h1 class="victory">ZONE 3</h1>
+      <h2>Signal locked... but the gate is still under construction</h2>
+      <p class="mission">You cleared Zone 2 and survived the Chrono Kraken. Final score: <strong>${pad(st.score)}</strong> · Best: <strong>${pad(st.best)}</strong></p>
+      <p>The next cosmic sector is booting soon. Expect stranger bosses, meaner patterns, and very questionable space physics.</p>
+      <div class="button-row">
+        <button id="againBtn">Fly Again</button>
+        <button class="secondary" id="menuBtn">Title Screen</button>
+      </div>`;
+    document.getElementById("againBtn").addEventListener("click", RR.game.reset);
+    document.getElementById("menuBtn").addEventListener("click", showMenu);
+  }
+
   RR.ui = {
     hudUpdate, toast,
-    showMenu, showPause, showGameOver, showVictory,
+    showMenu, showPause, showGameOver, showVictory, showComingSoon,
     hideOverlay, showOverlay,
   };
 })(typeof window !== "undefined" ? window : this);

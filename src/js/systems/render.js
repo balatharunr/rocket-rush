@@ -56,6 +56,7 @@
     drawBossBullets(ctx);
     drawParticles(ctx);
     if (RR.bosses.active) RR.bosses.draw(ctx);
+    RR.bosses.drawWormhole(ctx);
     drawRocket(ctx);
     drawFloatingTexts(ctx);
 

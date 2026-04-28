@@ -95,7 +95,7 @@
       asteroids.splice(i, 1);
       RR.game.addScore(60 + Math.round(a.r * 2), "ZAP", a.x, a.y, RR.config.PALETTE.orange);
     }
-    // Boss damage handled in bosses.js
+    // Boss damage handled in systems/boss-system/index.js
     if (RR.bosses && RR.bosses.onBomb) RR.bosses.onBomb(8);
     RR.effects.boom(rocket.x, rocket.y, 22, RR.config.PALETTE.yellow);
     return true;
@@ -367,70 +367,17 @@
   function collectPickup(p) {
     const st = RR.state;
     const P = RR.config.PALETTE;
-    switch (p.type) {
-      case "shield":
-        rocket.shield = clamp(rocket.shield + 50, 0, 100);
-        RR.game.addScore(120, "SHIELD", p.x, p.y, P.green);
-        RR.ui.toast("SHIELD ONLINE");
-        RR.effects.boom(p.x, p.y, 14, P.green);
-        RR.audio.sfx.shield();
-        break;
-      case "slow":
-        RR.fx.slowMo = 4.4;
-        RR.game.addScore(160, "SLOW-MO", p.x, p.y, P.cyan);
-        RR.ui.toast("TIME WARP");
-        RR.effects.boom(p.x, p.y, 18, P.cyan);
-        RR.audio.sfx.slow();
-        break;
-      case "bomb":
-        st.bombs = Math.min(st.bombs + 1, 5);
-        RR.game.addScore(140, "BOMB", p.x, p.y, P.yellow);
-        RR.ui.toast("BOMB ACQUIRED");
-        RR.effects.boom(p.x, p.y, 14, P.yellow);
-        RR.audio.sfx.pickup();
-        break;
-      case "life":
-        st.lives = Math.min(st.lives + 1, 5);
-        RR.game.addScore(220, "LIFE", p.x, p.y, P.red);
-        RR.ui.toast("EXTRA LIFE");
-        RR.effects.boom(p.x, p.y, 18, P.red);
-        RR.audio.sfx.pickup();
-        break;
-      case "magnet":
-        st.magnetTime = Math.max(st.magnetTime, 9);
-        RR.game.addScore(110, "MAGNET", p.x, p.y, P.pink);
-        RR.ui.toast("MAGNET ACTIVE");
-        RR.effects.boom(p.x, p.y, 14, P.pink);
-        RR.audio.sfx.magnet();
-        break;
-      case "phase":
-        st.phaseTime = Math.max(st.phaseTime, 4.5);
-        RR.game.addScore(180, "PHASE", p.x, p.y, P.purple);
-        RR.ui.toast("PHASE SHIFT");
-        RR.effects.boom(p.x, p.y, 18, P.purple);
-        RR.audio.sfx.phase();
-        break;
-      case "multishot":
-        st.multishotTime = Math.max(st.multishotTime, 8);
-        RR.game.addScore(150, "MULTI", p.x, p.y, P.orange);
-        RR.ui.toast("MULTI-SHOT");
-        RR.effects.boom(p.x, p.y, 14, P.orange);
-        RR.audio.sfx.pickup();
-        break;
-      case "gem":
-        st.combo++; st.comboTimer = 2.8;
-        RR.game.addScore(p.value, `x${Math.max(1, st.combo)}`, p.x, p.y, P.yellow);
-        RR.effects.boom(p.x, p.y, 10, P.yellow);
-        RR.audio.sfx.gem(st.combo);
-        break;
-      case "star":
-      default:
-        st.combo++; st.comboTimer = 2.2;
-        RR.game.addScore(p.value, "STAR", p.x, p.y, P.white);
-        RR.effects.boom(p.x, p.y, 6, P.white);
-        RR.audio.sfx.star();
-        break;
+    if (RR.pickupAbilities && RR.pickupAbilities.apply) {
+      RR.pickupAbilities.apply(p, { state: st, rocket, palette: P });
+      return;
     }
+
+    // Safe fallback for standalone test contexts where pickup abilities are not loaded.
+    st.combo++;
+    st.comboTimer = 2.2;
+    RR.game.addScore(p.value || 0, "STAR", p.x, p.y, P.white);
+    RR.effects.boom(p.x, p.y, 6, P.white);
+    RR.audio.sfx.star();
   }
 
   RR.entities = {

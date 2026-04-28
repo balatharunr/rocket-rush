@@ -84,27 +84,78 @@
     },
   };
 
-  // Boss progression — Spread out every 4 levels for a longer build-up.
-  // Diverse space themes: Rocks, Aliens, Tech, Cosmic Anomalies.
-  const BOSSES = [
-    { id: "bouldron",   type: "rock",      atLevel: 4,  name: "LORD BOULDRON",    title: "Patriarch Of The Belt",     taunt: "BOULDRON WILL CRUSH YOU!",         hp: 45,  color: PALETTE.orange },
-    { id: "saucer",     type: "ufo",       atLevel: 8,  name: "ZETA SAUCER",      title: "Extraterrestrial Scout",    taunt: "PROBING INITIATED...",             hp: 75,  color: PALETTE.green },
-    { id: "station",    type: "tech",      atLevel: 12, name: "ORBITAL BASTION",  title: "Automated Defense Matrix",  taunt: "UNAUTHORIZED VESSEL DETECTED.",    hp: 110, color: PALETTE.cyan },
-    { id: "anomaly",    type: "cosmic",    atLevel: 16, name: "THE ANOMALY",      title: "Sentient Gravity Well",     taunt: "EMBRACE THE VOID.",                hp: 160, color: PALETTE.purple },
-    { id: "mothership", type: "dread",     atLevel: 20, name: "XENON DREADNOUGHT",title: "The Final Threat",          taunt: "YOUR JOURNEY ENDS HERE.",          hp: 250, color: PALETTE.red, final: true },
-  ];
+  // Bosses are loaded by zone content files via RR.registerBossZone(...).
+  const BOSSES = [];
+  const BOSS_ZONES = {};
+
+  function registerBossZone(zoneId, zoneDef) {
+    const id = Number(zoneId);
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error("registerBossZone requires a positive numeric zoneId");
+    }
+    if (!zoneDef || !Array.isArray(zoneDef.bosses)) {
+      throw new Error("registerBossZone requires a zoneDef with a bosses array");
+    }
+
+    const normalizedBosses = zoneDef.bosses
+      .slice()
+      .sort((a, b) => a.atLevel - b.atLevel)
+      .map((boss, idx) => ({
+        ...boss,
+        zone: boss.zone || id,
+        orderInZone: idx + 1,
+      }));
+
+    BOSS_ZONES[id] = {
+      id,
+      key: zoneDef.key || `zone-${id}`,
+      name: zoneDef.name || `Zone ${id}`,
+      introToast: zoneDef.introToast || "",
+      entryLevel: zoneDef.entryLevel || ((id - 1) * 20 + 1),
+      wormholeColor: zoneDef.wormholeColor || "",
+      bosses: normalizedBosses,
+    };
+  }
+
+  function rebuildBossRoster() {
+    BOSSES.length = 0;
+    Object.keys(BOSS_ZONES)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .forEach((zoneId) => {
+        const zone = BOSS_ZONES[zoneId];
+        zone.bosses.forEach((boss) => {
+          BOSSES.push({
+            ...boss,
+            zone: boss.zone || zoneId,
+            zoneKey: zone.key,
+            zoneName: zone.name,
+          });
+        });
+      });
+  }
 
   RR.config = {
     W, H,
     PALETTE,
     TUNE,
     BOSSES,
+    BOSS_ZONES,
     STORAGE_KEY: "retroRocketRushBestV2",
-    LEVEL_FOR_VICTORY: 20,
+    LEVEL_FOR_VICTORY: 40,
     // Filled at runtime by render setup:
     scale: 1,
     cssWidth: W,
     cssHeight: H,
     lowDetail: false,
+  };
+
+  RR.registerBossZone = function (zoneId, zoneDef) {
+    registerBossZone(zoneId, zoneDef);
+    rebuildBossRoster();
+  };
+  RR.rebuildBossRoster = rebuildBossRoster;
+  RR.getBossZone = function (zoneId) {
+    return RR.config.BOSS_ZONES[Number(zoneId)] || null;
   };
 })(typeof window !== "undefined" ? window : this);
