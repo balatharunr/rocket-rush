@@ -25,10 +25,6 @@
 
 ---
 
-## 🎮 Gameplay in Action
-
-*(Drop a high-quality 60fps `.gif` or `.mp4` here showing off the neon visuals and fast gameplay)*
-
 ---
 
 ## 🕹️ Core Features
@@ -76,4 +72,4 @@ Want to run it locally or tweak the source code? It takes literal seconds.
 
 **1. Clone the repository:**
 ```bash
-git clone [https://github.com/yourusername/rocket-rush.git](https://github.com/yourusername/rocket-rush.git)
+git clone https://github.com/balatharunr/rocket-rush.git
