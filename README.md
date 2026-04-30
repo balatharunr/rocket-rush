@@ -4,7 +4,7 @@
 
 **Dodge. Blast. Survive. Repeat.** A high-speed, adrenaline-pumping retro neon arcade shooter powered by pure vanilla JavaScript.
 
-[![Play Live Demo](https://img.shields.io/badge/PLAY_LIVE_DEMO-00EAFF?style=for-the-badge&logo=vercel&logoColor=black)](https://rocket-rush-game.vercel.app/)
+[![Play Live Demo](https://img.shields.io/badge/PLAY_LIVE_DEMO-00EAFF?style=for-the-badge&logo=vercel&logoColor=black)](https://rocket-rush-zeta.vercel.app/)
 
 <br>
 
