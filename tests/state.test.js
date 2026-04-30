@@ -22,7 +22,7 @@ describe('State', () => {
     expect(state).toBeDefined();
     expect(state.mode).toBe('menu');
     expect(state.score).toBe(0);
-    expect(state.lives).toBe(3);
+    expect(state.lives).toBe(5);
     expect(state.level).toBe(1);
   });
 

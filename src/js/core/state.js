@@ -8,7 +8,7 @@
   const state = {
     mode: "menu",       // menu | playing | paused | gameover | victory | bossIntro | bossFight | bossDefeated
     score: 0,
-    lives: 3,
+    lives: 5,
     zone: 1,
     level: 1,
     distance: 0,

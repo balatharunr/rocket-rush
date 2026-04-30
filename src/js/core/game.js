@@ -70,7 +70,7 @@
     const st = RR.state;
     st.mode = "playing";
     st.score = 0;
-    st.lives = 3;
+    st.lives = 5;
     st.zone = 1;
     st.level = 1;
     st.distance = 0;
