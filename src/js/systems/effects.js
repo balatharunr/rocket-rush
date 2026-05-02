@@ -52,6 +52,15 @@
     floatingTexts.push({ text, x, y, color, life: 0.95, vy: -38 });
   }
 
+  function lobbyHit(x, y) {
+    const P = RR.config.PALETTE;
+    shake(8);
+    flash(0.10, P.cyan);
+    boom(x, y, 18, P.cyan);
+    showFloating("BUMP!", x + 10, y - 26, P.cyan);
+    if (RR.audio && RR.audio.sfx && RR.audio.sfx.hit) RR.audio.sfx.hit();
+  }
+
   function update(dt) {
     // Particles
     const live = particlePool.live;
@@ -101,6 +110,6 @@
   RR.effects = {
     particlePool, floatingTexts,
     spawnParticle, boom, spark, showFloating,
-    update, clear, shake, flash,
+    lobbyHit, update, clear, shake, flash,
   };
 })(typeof window !== "undefined" ? window : this);

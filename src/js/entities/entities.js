@@ -292,7 +292,11 @@
       if (rocketHits(a)) {
         asteroids.splice(i, 1);
         splitAsteroid(a);
-        if (RR.state.mode !== "lobby" && RR.state.mode !== "lobbyStart") damageRocket();
+        if (RR.state.mode === "lobby" || RR.state.mode === "lobbyStart") {
+          RR.effects.lobbyHit(rocket.x + 12, rocket.y);
+        } else {
+          damageRocket();
+        }
       }
     }
   }
