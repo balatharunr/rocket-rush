@@ -5,7 +5,7 @@
 (function (root) {
   "use strict";
   const RR = (root.RR = root.RR || {});
-  const { rand, choose, TWO_PI } = RR.utils;
+  const { rand, TWO_PI } = RR.utils;
 
   let spawnTimer = 0.4;
   let pickupTimer = 1.8;
@@ -57,8 +57,11 @@
   }
 
   function spawnAsteroid() {
-    const { W, H, TUNE } = RR.config;
+    const { W, H } = RR.config;
     const lvl = RR.state.level;
+    const healthScale = RR.multiplayer && RR.state.mode !== "lobby" && RR.state.mode !== "lobbyStart"
+      ? RR.multiplayer.difficultyScale("health")
+      : 1;
     const radius = rand(14, 42) + lvl * 0.6;
     const fast = Math.random() < 0.10 + lvl * 0.012;
     const splitter = Math.random() < 0.07 + lvl * 0.006;
@@ -70,7 +73,7 @@
       vy: rand(-46, 46),
       spin: rand(-2.6, 2.6),
       rot: rand(0, TWO_PI),
-      hp: radius > 30 ? 2 : 1,
+      hp: Math.max(1, Math.ceil((radius > 30 ? 2 : 1) * healthScale)),
       fast, splitter,
       seed: Math.random() * 999,
     });
@@ -83,7 +86,8 @@
     // Weighted random pick. Rarer types appear more often at higher levels.
     const r = Math.random();
     let type;
-    if (r < 0.22) type = "shield";
+    if (RR.multiplayer && RR.multiplayer.hasDeadPlayer && RR.multiplayer.hasDeadPlayer() && r < 0.16) type = "revive";
+    else if (r < 0.22) type = "shield";
     else if (r < 0.40) type = "slow";
     else if (r < 0.55) type = "bomb";
     else if (r < 0.70) type = "magnet";
@@ -126,7 +130,8 @@
     // Asteroids — paused during boss fight.
     if (!inBoss) {
       spawnTimer -= gdt;
-      const baseRate = Math.max(0.34, TUNE.asteroidBase - st.level * TUNE.asteroidPerLevel - (turbo ? TUNE.asteroidTurboBoost : 0));
+      const scale = RR.multiplayer ? RR.multiplayer.difficultyScale("spawn") : 1;
+      const baseRate = Math.max(0.24, (TUNE.asteroidBase - st.level * TUNE.asteroidPerLevel - (turbo ? TUNE.asteroidTurboBoost : 0)) / scale);
       while (spawnTimer <= 0) {
         spawnAsteroid();
         spawnTimer += baseRate * rand(0.7, 1.18);
@@ -171,5 +176,14 @@
     }
   }
 
-  RR.spawn = { reset, update, spawnAsteroid, spawnPickup, spawnStarGem, onLifeLost };
+  function updateLobby(dt, gdt) {
+    spawnTimer -= gdt;
+    if (spawnTimer <= 0) {
+      spawnAsteroid();
+      spawnTimer = rand(0.8, 1.4);
+    }
+    if (lifeAssistCooldown > 0) lifeAssistCooldown = Math.max(0, lifeAssistCooldown - gdt);
+  }
+
+  RR.spawn = { reset, update, updateLobby, spawnAsteroid, spawnPickup, spawnStarGem, onLifeLost };
 })(typeof window !== "undefined" ? window : this);

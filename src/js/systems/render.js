@@ -58,6 +58,7 @@
     if (RR.bosses.active) RR.bosses.draw(ctx);
     RR.bosses.drawWormhole(ctx);
     drawRocket(ctx);
+    drawTeammateRockets(ctx);
     drawFloatingTexts(ctx);
 
     // UI overlays inside the canvas (not affected by shake).
@@ -82,6 +83,7 @@
       ctx.restore();
     }
     if (RR.state.mode === "menu") drawAttractMode(ctx);
+    drawTransitionFade(ctx);
   }
 
   function drawBackground(ctx) {
@@ -230,108 +232,123 @@
       ctx.rotate(p.bob * 0.7);
 
       switch (p.type) {
-        case "shield":
-          ctx.fillStyle = PALETTE.green; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(0, -18); ctx.lineTo(16, -9); ctx.lineTo(10, 14);
-          ctx.lineTo(0, 21); ctx.lineTo(-10, 14); ctx.lineTo(-16, -9);
-          ctx.closePath(); ctx.fill(); ctx.stroke();
-          break;
-        case "slow":
-          ctx.strokeStyle = PALETTE.cyan; ctx.lineWidth = 4;
-          ctx.beginPath(); ctx.arc(0, 0, 16, 0, TWO_PI); ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(0, 0); ctx.lineTo(0, -10);
-          ctx.moveTo(0, 0); ctx.lineTo(9, 5);
-          ctx.stroke();
-          break;
-        case "bomb":
-          ctx.fillStyle = PALETTE.yellow; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(0, 4, 13, 0, TWO_PI); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = "#0a0026";
-          ctx.fillRect(-2, -10, 4, 6);
-          ctx.fillStyle = PALETTE.orange;
-          ctx.beginPath(); ctx.arc(0, -12, 3, 0, TWO_PI); ctx.fill();
-          break;
-        case "life": {
-          // Emergency life pickup: bright halo + heart to stand out when health is critical.
-          const pulse = 1 + Math.sin(p.bob * 2.8) * 0.14;
-          ctx.scale(pulse, pulse);
-          ctx.globalAlpha = 0.45;
-          ctx.fillStyle = PALETTE.red;
-          ctx.beginPath(); ctx.arc(0, 0, 18, 0, TWO_PI); ctx.fill();
-          ctx.globalAlpha = 0.35;
-          ctx.strokeStyle = "#fff";
-          ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(0, 0, 22, 0, TWO_PI); ctx.stroke();
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = PALETTE.red;
-          ctx.strokeStyle = "#fff";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(0, 13);
-          ctx.bezierCurveTo(14, 1, 16, -10, 8, -13);
-          ctx.bezierCurveTo(3, -15, 0, -11, 0, -8);
-          ctx.bezierCurveTo(0, -11, -3, -15, -8, -13);
-          ctx.bezierCurveTo(-16, -10, -14, 1, 0, 13);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#fff";
-          ctx.beginPath();
-          ctx.arc(Math.cos(p.bob * 2.1) * 20, Math.sin(p.bob * 2.1) * 9, 2.4, 0, TWO_PI);
-          ctx.fill();
-          break;
+      case "shield":
+        ctx.fillStyle = PALETTE.green; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -18); ctx.lineTo(16, -9); ctx.lineTo(10, 14);
+        ctx.lineTo(0, 21); ctx.lineTo(-10, 14); ctx.lineTo(-16, -9);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        break;
+      case "slow":
+        ctx.strokeStyle = PALETTE.cyan; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(0, 0, 16, 0, TWO_PI); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(0, -10);
+        ctx.moveTo(0, 0); ctx.lineTo(9, 5);
+        ctx.stroke();
+        break;
+      case "bomb":
+        ctx.fillStyle = PALETTE.yellow; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 4, 13, 0, TWO_PI); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#0a0026";
+        ctx.fillRect(-2, -10, 4, 6);
+        ctx.fillStyle = PALETTE.orange;
+        ctx.beginPath(); ctx.arc(0, -12, 3, 0, TWO_PI); ctx.fill();
+        break;
+      case "life": {
+        // Emergency life pickup: bright halo + heart to stand out when health is critical.
+        const pulse = 1 + Math.sin(p.bob * 2.8) * 0.14;
+        ctx.scale(pulse, pulse);
+        ctx.globalAlpha = 0.45;
+        ctx.fillStyle = PALETTE.red;
+        ctx.beginPath(); ctx.arc(0, 0, 18, 0, TWO_PI); ctx.fill();
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, 22, 0, TWO_PI); ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = PALETTE.red;
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 13);
+        ctx.bezierCurveTo(14, 1, 16, -10, 8, -13);
+        ctx.bezierCurveTo(3, -15, 0, -11, 0, -8);
+        ctx.bezierCurveTo(0, -11, -3, -15, -8, -13);
+        ctx.bezierCurveTo(-16, -10, -14, 1, 0, 13);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(Math.cos(p.bob * 2.1) * 20, Math.sin(p.bob * 2.1) * 9, 2.4, 0, TWO_PI);
+        ctx.fill();
+        break;
+      }
+      case "revive": {
+        const pulse = 1 + Math.sin(p.bob * 3) * 0.12;
+        ctx.scale(pulse, pulse);
+        ctx.strokeStyle = PALETTE.green;
+        ctx.fillStyle = "rgba(120,255,122,0.30)";
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, 0, 18, 0, TWO_PI); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = PALETTE.green;
+        ctx.fillRect(-4, -13, 8, 26);
+        ctx.fillRect(-13, -4, 26, 8);
+        ctx.strokeStyle = "#fff";
+        ctx.strokeRect(-4, -13, 8, 26);
+        ctx.strokeRect(-13, -4, 26, 8);
+        break;
+      }
+      case "magnet":
+        ctx.strokeStyle = PALETTE.pink; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 12, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.stroke();
+        ctx.fillStyle = PALETTE.pink;
+        ctx.fillRect(-12, -3, 4, 8);
+        ctx.fillRect(8, -3, 4, 8);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(-12, 4, 4, 3);
+        ctx.fillRect(8, 4, 4, 3);
+        break;
+      case "phase":
+        ctx.strokeStyle = PALETTE.purple; ctx.fillStyle = "rgba(181,98,255,0.35)";
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, 0, 14, 0, TWO_PI); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0, 8, 0, TWO_PI); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, TWO_PI); ctx.fillStyle = "#fff"; ctx.fill();
+        break;
+      case "multishot":
+        ctx.strokeStyle = PALETTE.orange; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-12, -6); ctx.lineTo(12, -6);
+        ctx.moveTo(-12,  0); ctx.lineTo(12, 0);
+        ctx.moveTo(-12,  6); ctx.lineTo(12, 6);
+        ctx.stroke();
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.arc(12, -6, 2, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(12,  0, 2, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(12,  6, 2, 0, TWO_PI); ctx.fill();
+        break;
+      case "gem":
+        ctx.fillStyle = PALETTE.yellow; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -18); ctx.lineTo(16, -3); ctx.lineTo(9, 15);
+        ctx.lineTo(-9, 15); ctx.lineTo(-16, -3); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+      default: // star
+        ctx.fillStyle = "#fff"; ctx.strokeStyle = PALETTE.yellow; ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const r = i % 2 === 0 ? 12 : 5;
+          const a = -Math.PI / 2 + (i / 10) * TWO_PI;
+          const px = Math.cos(a) * r, py = Math.sin(a) * r;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
         }
-        case "magnet":
-          ctx.strokeStyle = PALETTE.pink; ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(0, 0, 12, Math.PI * 1.1, Math.PI * 1.9);
-          ctx.stroke();
-          ctx.fillStyle = PALETTE.pink;
-          ctx.fillRect(-12, -3, 4, 8);
-          ctx.fillRect(8, -3, 4, 8);
-          ctx.fillStyle = "#fff";
-          ctx.fillRect(-12, 4, 4, 3);
-          ctx.fillRect(8, 4, 4, 3);
-          break;
-        case "phase":
-          ctx.strokeStyle = PALETTE.purple; ctx.fillStyle = "rgba(181,98,255,0.35)";
-          ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(0, 0, 14, 0, TWO_PI); ctx.fill(); ctx.stroke();
-          ctx.beginPath(); ctx.arc(0, 0, 8, 0, TWO_PI); ctx.stroke();
-          ctx.beginPath(); ctx.arc(0, 0, 3, 0, TWO_PI); ctx.fillStyle = "#fff"; ctx.fill();
-          break;
-        case "multishot":
-          ctx.strokeStyle = PALETTE.orange; ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(-12, -6); ctx.lineTo(12, -6);
-          ctx.moveTo(-12,  0); ctx.lineTo(12, 0);
-          ctx.moveTo(-12,  6); ctx.lineTo(12, 6);
-          ctx.stroke();
-          ctx.fillStyle = "#fff";
-          ctx.beginPath(); ctx.arc(12, -6, 2, 0, TWO_PI); ctx.fill();
-          ctx.beginPath(); ctx.arc(12,  0, 2, 0, TWO_PI); ctx.fill();
-          ctx.beginPath(); ctx.arc(12,  6, 2, 0, TWO_PI); ctx.fill();
-          break;
-        case "gem":
-          ctx.fillStyle = PALETTE.yellow; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(0, -18); ctx.lineTo(16, -3); ctx.lineTo(9, 15);
-          ctx.lineTo(-9, 15); ctx.lineTo(-16, -3); ctx.closePath();
-          ctx.fill(); ctx.stroke();
-          break;
-        default: // star
-          ctx.fillStyle = "#fff"; ctx.strokeStyle = PALETTE.yellow; ctx.lineWidth = 2;
-          ctx.beginPath();
-          for (let i = 0; i < 10; i++) {
-            const r = i % 2 === 0 ? 12 : 5;
-            const a = -Math.PI / 2 + (i / 10) * TWO_PI;
-            const px = Math.cos(a) * r, py = Math.sin(a) * r;
-            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-          }
-          ctx.closePath(); ctx.fill(); ctx.stroke();
-          break;
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        break;
       }
       ctx.restore();
     }
@@ -418,6 +435,8 @@
   function drawRocket(ctx) {
     const r = RR.entities.rocket;
     const { PALETTE } = RR.config;
+    const selected = RR.multiplayerState && RR.multiplayerState.selectedColor;
+    const mpColor = (RR.config.MULTIPLAYER.colors.find((color) => color.id === selected) || {}).value;
     const flicker = RR.state.invincible > 0 && Math.floor(performance.now() / 80) % 2 === 0;
     const phasing = RR.state.phaseTime > 0;
     ctx.save();
@@ -481,7 +500,7 @@
     ctx.closePath(); ctx.fill();
 
     // Body
-    ctx.fillStyle = "#c8d8ff";
+    ctx.fillStyle = mpColor || "#c8d8ff";
     ctx.beginPath();
     ctx.moveTo(32, 0);
     ctx.lineTo(12, -17);
@@ -519,6 +538,54 @@
     ctx.moveTo(-22,  10); ctx.lineTo(11,  10);
     ctx.stroke();
 
+    ctx.restore();
+  }
+
+  function drawTeammateRockets(ctx) {
+    if (!RR.multiplayerState || RR.multiplayerState.players.length <= 1) return;
+    const players = RR.multiplayerState.players.slice(1);
+    players.forEach((player, index) => {
+      if (player.dead) return;
+      const color = RR.config.MULTIPLAYER.colors.find((item) => item.id === player.color);
+      const y = player.y || (RR.config.H / (players.length + 2)) * (index + 2);
+      drawMiniRocket(ctx, player.x || RR.config.TUNE.rocket.startX, y, color ? color.value : RR.config.PALETTE.white);
+    });
+  }
+
+  function drawMiniRocket(ctx, x, y, color) {
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.translate(x, y);
+    ctx.scale(0.72, 0.72);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(32, 0);
+    ctx.lineTo(12, -17);
+    ctx.lineTo(-27, -15);
+    ctx.lineTo(-35, 0);
+    ctx.lineTo(-27, 15);
+    ctx.lineTo(12, 17);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = RR.config.PALETTE.red;
+    ctx.beginPath();
+    ctx.moveTo(32, 0);
+    ctx.lineTo(12, -17);
+    ctx.lineTo(16, 0);
+    ctx.lineTo(12, 17);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawTransitionFade(ctx) {
+    const fade = RR.multiplayerState ? RR.multiplayerState.fadeT : 0;
+    if (fade <= 0) return;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = clamp(fade, 0, 1);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.restore();
   }
 
