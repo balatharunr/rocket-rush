@@ -75,6 +75,8 @@
   function spawnBoss(i) {
     const cfg = RR.config.BOSSES[i];
     const { W, H } = RR.config;
+    const healthScale = RR.multiplayer ? RR.multiplayer.difficultyScale("health") : 1;
+    const scaledHp = Math.ceil(cfg.hp * healthScale);
     active = {
       id: cfg.id,
       cfg: cfg,
@@ -82,8 +84,9 @@
       x: W + 90, y: H / 2,
       tx: W * 0.78, ty: H / 2,    // target position
       r: bossRadius(cfg),
-      hp: cfg.hp,
-      maxHp: cfg.hp,
+      hp: scaledHp,
+      maxHp: scaledHp,
+      baseHp: cfg.hp,
       phase: 1,
       t: 0,
       attackT: rand(1.2, 2.0),
@@ -221,7 +224,8 @@
             : A.cfg.type === "cosmic" ? rand(0.8, 1.4)
               : A.cfg.type === "dread" ? rand(0.5, 1.0)
                 : rand(0.6, 1.2);
-      A.attackT = baseCd / (1 + (A.phase - 1) * 0.3);
+      const spawnScale = RR.multiplayer ? RR.multiplayer.difficultyScale("spawn") : 1;
+      A.attackT = baseCd / ((1 + (A.phase - 1) * 0.3) * spawnScale);
     }
 
     // Collide with rocket.
@@ -259,6 +263,15 @@
         RR.entities.damageRocket();
       }
     }
+  }
+
+  function rebalanceActiveBoss() {
+    if (!active) return;
+    const scale = RR.multiplayer ? RR.multiplayer.difficultyScale("health") : 1;
+    const newMax = Math.max(1, Math.ceil((active.baseHp || active.cfg.hp || active.maxHp) * scale));
+    const ratio = active.maxHp > 0 ? active.hp / active.maxHp : 1;
+    active.maxHp = newMax;
+    active.hp = Math.max(1, Math.ceil(newMax * clamp(ratio, 0.05, 1)));
   }
 
   // ───── Attacks ─────
@@ -1154,7 +1167,7 @@
 
   RR.bosses = {
     reset, maybeTrigger, update, draw, drawWormhole, drawTracker, drawIntro,
-    collideBullet, onBomb, damage, defeat,
+    collideBullet, onBomb, damage, defeat, rebalanceActiveBoss,
     get active() { return active; },
     get bossBullets() { return bossBullets; },
     get defeatedFlags() { return defeatedFlags; },
