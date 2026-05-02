@@ -60,9 +60,7 @@
       } else if (cheatMode && e.key.length === 1 && e.key.match(/[a-z]/i)) {
         _cheatBuffer += e.key.toLowerCase();
         if (_cheatBuffer.length > 6) _cheatBuffer = _cheatBuffer.slice(-6);
-        // DEBUG: show buffer
-        RR.ui.toast(">" + _cheatBuffer, 500);
-        // hash check: djb2
+                // hash check: djb2
         let h = 5381;
         for (let i = 0; i < _cheatBuffer.length; i++) h = ((h << 5) + h) ^ _cheatBuffer.charCodeAt(i);
         if ((h >>> 0) === _cheatHash && _cheatBuffer === "gangeyy") {
