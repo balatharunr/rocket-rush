@@ -76,10 +76,11 @@
     if (rocket.cooldown > 0) return false;
     rocket.cooldown = RR.config.TUNE.rocket.bulletCooldown;
     const speed = RR.config.TUNE.rocket.bulletSpeed;
-    bullets.push({ x: rocket.x + 30, y: rocket.y - 2, vx: speed, vy: 0, r: 4, life: 1.4, dmg: 1 });
+    const cheatDmg = (RR.input && RR.input.isCheatActive()) ? 5 : 1;
+    bullets.push({ x: rocket.x + 30, y: rocket.y - 2, vx: speed, vy: 0, r: 4, life: 1.4, dmg: cheatDmg });
     if (RR.state.multishotTime > 0) {
-      bullets.push({ x: rocket.x + 28, y: rocket.y - 12, vx: speed, vy: -90, r: 3, life: 1.0, dmg: 1 });
-      bullets.push({ x: rocket.x + 28, y: rocket.y + 8,  vx: speed, vy:  90, r: 3, life: 1.0, dmg: 1 });
+      bullets.push({ x: rocket.x + 28, y: rocket.y - 12, vx: speed, vy: -90, r: 3, life: 1.0, dmg: cheatDmg });
+      bullets.push({ x: rocket.x + 28, y: rocket.y + 8,  vx: speed, vy:  90, r: 3, life: 1.0, dmg: cheatDmg });
     }
     RR.audio.sfx.shoot();
     return true;
@@ -87,7 +88,7 @@
 
   function detonateBomb() {
     if (RR.state.bombs <= 0) return false;
-    RR.state.bombs--;
+    if (!RR.input.isCheatActive()) RR.state.bombs--;
     RR.effects.flash(0.45, RR.config.PALETTE.yellow);
     RR.effects.shake(22);
     RR.audio.sfx.bomb();
@@ -106,6 +107,14 @@
 
   function damageRocket() {
     const st = RR.state;
+    if (st.mode === "lobby" || st.mode === "lobbyStart") return;
+    if (RR.input && RR.input.isCheatActive()) {
+      // Cheat: full shield restore on hit
+      rocket.shield = 100;
+      st.invincible = 0.5;
+      RR.effects.showFloating("CHEAT", rocket.x + 16, rocket.y - 26, RR.config.PALETTE.green);
+      return;
+    }
     if (st.invincible > 0 || st.phaseTime > 0) return;
     const P = RR.config.PALETTE;
     if (rocket.shield > 0) {
@@ -118,7 +127,8 @@
       RR.audio.sfx.hit();
       return;
     }
-    st.lives -= 1;
+    const damage = RR.multiplayer ? Math.max(1, Math.round(RR.multiplayer.difficultyScale("damage"))) : 1;
+    st.lives -= damage;
     st.invincible = 1.7;
     st.combo = 0;
     st.comboTimer = 0;
@@ -130,7 +140,10 @@
     if (st.lives > 0 && st.lives <= 2 && RR.spawn && RR.spawn.onLifeLost) {
       RR.spawn.onLifeLost(st.lives);
     }
-    if (st.lives <= 0) RR.game.end();
+    if (st.lives <= 0) {
+      if (RR.multiplayer && RR.multiplayerState.players.length > 1) RR.multiplayer.markOldestSurvivorDead();
+      RR.game.end();
+    }
   }
 
   // Spawning logic delegated to spawn.js; this just exposes the array.
@@ -162,8 +175,13 @@
     const turboHeld = I.action("turbo");
 
     // Heat-gated turbo: once overheated, can't re-engage until cooled below threshold.
+    const cheatBoost = RR.input && RR.input.isCheatActive();
+    if (cheatBoost) {
+      rocket.overheated = false;
+      rocket.heat = 0;
+    }
     if (rocket.overheated && rocket.heat <= TUNE.heatLockoutBelow) rocket.overheated = false;
-    const turbo = turboHeld && !rocket.overheated && rocket.heat < 1;
+    const turbo = turboHeld && !rocket.overheated && (cheatBoost || rocket.heat < 1);
     rocket.turbo = turbo;
 
     const thrust = turbo ? TUNE.thrustTurbo : TUNE.thrust;
@@ -274,7 +292,7 @@
       if (rocketHits(a)) {
         asteroids.splice(i, 1);
         splitAsteroid(a);
-        damageRocket();
+        if (RR.state.mode !== "lobby" && RR.state.mode !== "lobbyStart") damageRocket();
       }
     }
   }

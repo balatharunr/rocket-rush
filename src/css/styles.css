@@ -242,6 +242,11 @@ button.secondary {
   border: 2px solid var(--cyan);
   box-shadow: 0 5px 0 #050316, 0 0 18px rgba(54,245,255,.30);
 }
+button.danger {
+  border-color: var(--red);
+  color: var(--white);
+  box-shadow: 0 5px 0 #26020a, 0 0 18px rgba(255,55,95,.30);
+}
 
 .mission { color: var(--green); text-shadow: 0 0 8px rgba(120,255,122,.5); }
 .tip { font-size: 12px; color: var(--muted); }
@@ -302,6 +307,26 @@ button.secondary {
   letter-spacing: 1px;
   text-transform: uppercase;
   text-align: left;
+}
+.player-name-field {
+  display: grid;
+  gap: 6px;
+  width: min(360px, 100%);
+  margin: 12px auto 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: left;
+}
+.player-name-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid rgba(255,228,92,.58);
+  border-radius: 8px;
+  background: rgba(0,0,0,.30);
+  color: var(--white);
+  font: 800 14px "Courier New", Courier, monospace;
 }
 .privacy-toggle {
   display: grid;
@@ -456,7 +481,7 @@ button.secondary {
 .lobby-actions {
   position: absolute;
   left: 50%;
-  bottom: 14px;
+  bottom: 70px;
   transform: translateX(-50%);
   z-index: 4;
   pointer-events: auto;
