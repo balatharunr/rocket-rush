@@ -415,7 +415,7 @@
       </div>
       <div class="button-row">
         ${inPregame ? `<button id="startLobbyBtn" ${canStart && RR.multiplayerState.isHost ? "" : "disabled"}>${RR.multiplayerState.isHost ? "Start Game" : "Waiting For Host"}</button>` : ""}
-        <button class="secondary" id="closeLobbyBtn">Close Room</button>
+        <button class="secondary" id="closeLobbyBtn">Back</button>
       </div>`;
 
     RR.dom.modal.querySelectorAll(".color-choice").forEach((button) => {
