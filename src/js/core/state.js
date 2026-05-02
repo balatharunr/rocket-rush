@@ -6,7 +6,7 @@
   const RR = (root.RR = root.RR || {});
 
   const state = {
-    mode: "menu",       // menu | playing | paused | gameover | victory | bossIntro | bossFight | bossDefeated
+    mode: "menu",       // menu | partyMenu | lobby | playing | paused | gameover | victory | bossIntro | bossFight | bossDefeated
     score: 0,
     lives: 5,
     zone: 1,
@@ -30,6 +30,20 @@
     fps: 60,
     best: 0,
     mapId: 0,           // index into RR.config.MAPS
+    activePlayerCount: 1,
+  };
+
+  const multiplayer = {
+    parties: [],
+    activePartyId: "",
+    isHost: false,
+    selectedColor: "",
+    lobbyError: "",
+    fadeT: 0,
+    players: [],
+    deadQueue: [],
+    roomOpen: false,
+    playerName: "",
   };
 
   // Effects / timers that aren't tied to a single entity.
@@ -57,9 +71,14 @@
     dom.toast    = document.getElementById("toast");
     dom.wrap     = document.getElementById("game-wrap");
     dom.touch    = document.getElementById("touch");
+    dom.roomBtn  = document.getElementById("roomBtn");
+    dom.exitBtn  = document.getElementById("exitBtn");
+    dom.lobbyActions = document.getElementById("lobbyActions");
+    dom.lobbyStartInlineBtn = document.getElementById("lobbyStartInlineBtn");
   }
 
   RR.state = state;
+  RR.multiplayerState = multiplayer;
   RR.fx = fx;
   RR.dom = dom;
   RR.bindDom = bindDom;
