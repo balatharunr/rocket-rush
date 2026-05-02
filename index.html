@@ -30,12 +30,19 @@
       <div class="stat"><span class="label">Bombs</span><span class="value" id="bombs">01</span></div>
       <div class="stat boost-stat"><span class="label">Boost</span><span class="value" id="boost">100%</span><span class="meter"><span class="meter-fill" id="boost-fill"></span></span></div>
     </div>
+    <div class="session-actions">
+      <button class="room-btn secondary hidden-control" id="roomBtn" type="button">Room</button>
+      <button class="exit-btn secondary" id="exitBtn" type="button">Exit</button>
+    </div>
   </section>
 
   <!-- ─── Game canvas ─── -->
   <section class="game-wrap" id="game-wrap">
     <canvas id="game" aria-label="Rocket game canvas"></canvas>
     <div class="toast" id="toast">MISSION START</div>
+    <div class="lobby-actions hidden-control" id="lobbyActions">
+      <button id="lobbyStartInlineBtn" type="button" disabled>Start Game</button>
+    </div>
 
     <!-- Touch controls (auto-shown on coarse pointer devices) -->
     <div class="touch" id="touch" aria-hidden="true">
@@ -75,6 +82,7 @@
 <script src="src/js/systems/audio.js"></script>
 <script src="src/js/systems/input.js"></script>
 <script src="src/js/systems/effects.js"></script>
+<script src="src/js/systems/multiplayer.js"></script>
 <script src="src/js/content/abilities/pickup-abilities.js"></script>
 <script src="src/js/entities/entities.js"></script>
 <script src="src/js/entities/spawn.js"></script>
