@@ -18,7 +18,7 @@
     if (handler) handler(pickup, ctx);
   }
 
-  register("shield", (p, { state, rocket, palette }) => {
+  register("shield", (p, { rocket, palette }) => {
     rocket.shield = clamp(rocket.shield + 50, 0, 100);
     RR.game.addScore(120, "SHIELD", p.x, p.y, palette.green);
     RR.ui.toast("SHIELD ONLINE");
@@ -47,6 +47,19 @@
     RR.game.addScore(220, "LIFE", p.x, p.y, palette.red);
     RR.ui.toast("EXTRA LIFE");
     RR.effects.boom(p.x, p.y, 18, palette.red);
+    RR.audio.sfx.pickup();
+  });
+
+  register("revive", (p, { palette }) => {
+    const revived = RR.multiplayer && RR.multiplayer.reviveFirstDead ? RR.multiplayer.reviveFirstDead() : null;
+    if (!revived) {
+      RR.game.addScore(180, "REVIVE READY", p.x, p.y, palette.green);
+      return;
+    }
+    const bonus = RR.config.MULTIPLAYER.difficulty.reviveScoreMultiplier;
+    RR.game.addScore(Math.round(700 * bonus), "REVIVE", p.x, p.y, palette.green);
+    RR.ui.toast(`${revived.name.toUpperCase()} REVIVED`);
+    RR.effects.boom(p.x, p.y, 22, palette.green);
     RR.audio.sfx.pickup();
   });
 

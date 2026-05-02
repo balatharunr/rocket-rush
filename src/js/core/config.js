@@ -224,11 +224,56 @@
     PALETTE._starTwinkleMult = p.starTwinkleMult;
   }
 
+  const BASE_W = W;
+  const BASE_H = H;
+  const MULTIPLAYER = {
+    colors: [
+      { id: "cyan", label: "Comet Cyan", value: "#36f5ff" },
+      { id: "pink", label: "Nova Pink", value: "#ff4fd8" },
+      { id: "green", label: "Ion Green", value: "#78ff7a" },
+      { id: "yellow", label: "Solar Yellow", value: "#ffe45c" },
+    ],
+    canvasByPlayers: {
+      2: { w: 960, h: 540, label: "standard" },
+      3: { w: 1120, h: 630, label: "medium" },
+      4: { w: 1280, h: 720, label: "maximum" },
+    },
+    difficulty: {
+      healthPerExtraPlayer: 0.42,
+      damagePerExtraPlayer: 0.22,
+      spawnRatePerExtraPlayer: 0.16,
+      reviveScoreMultiplier: 2.5,
+    },
+  };
+
+  function setLogicalSize(width, height) {
+    const w = Number(width) || BASE_W;
+    const h = Number(height) || BASE_H;
+    RR.config.W = w;
+    RR.config.H = h;
+    if (RR.render && RR.render.rebuildCaches) RR.render.rebuildCaches();
+    if (RR.entities && RR.entities.initStars) RR.entities.initStars();
+    if (RR.game && RR.game.resize) RR.game.resize();
+  }
+
+  function setLogicalSizeForPlayers(count) {
+    const players = Math.min(4, Math.max(2, Number(count) || 2));
+    const size = MULTIPLAYER.canvasByPlayers[players] || MULTIPLAYER.canvasByPlayers[2];
+    setLogicalSize(size.w, size.h);
+    return size;
+  }
+
+  function resetLogicalSize() {
+    setLogicalSize(BASE_W, BASE_H);
+  }
+
   RR.config = {
     W, H,
+    BASE_W, BASE_H,
     PALETTE,
     MAPS,
     TUNE,
+    MULTIPLAYER,
     BOSSES,
     BOSS_ZONES,
     STORAGE_KEY: "retroRocketRushBestV2",
@@ -240,6 +285,9 @@
     lowDetail: false,
     activeMapId: 0,
     applyMapPalette,
+    setLogicalSize,
+    setLogicalSizeForPlayers,
+    resetLogicalSize,
   };
 
   RR.registerBossZone = function (zoneId, zoneDef) {

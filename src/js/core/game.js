@@ -27,6 +27,32 @@
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && RR.state.mode === "playing") pause();
     });
+    const exitBtn = document.getElementById("exitBtn");
+    if (exitBtn) exitBtn.addEventListener("click", () => {
+      const inMultiplayer = RR.multiplayerState && RR.multiplayerState.activePartyId;
+      if (inMultiplayer && RR.multiplayer && RR.multiplayer.leaveActiveSession) {
+        if (RR.multiplayerState.isHost) {
+          RR.ui.showHostExitPrompt();
+        } else {
+          RR.ui.showConfirm({
+            title: "Exit Party",
+            message: "Leave this multiplayer session?",
+            confirmLabel: "Exit",
+            onConfirm: () => RR.multiplayer.leaveActiveSession(),
+          });
+        }
+        return;
+      }
+      if (RR.state.mode === "playing" || RR.state.mode === "bossIntro" || RR.state.mode === "bossFight" || RR.state.mode === "bossDefeated" || RR.state.mode === "wormhole" || RR.state.mode === "warp") {
+        pause();
+        return;
+      }
+      RR.ui.showMenu();
+    });
+    if (RR.dom.roomBtn) RR.dom.roomBtn.addEventListener("click", RR.ui.showLobby);
+    if (RR.dom.lobbyStartInlineBtn) RR.dom.lobbyStartInlineBtn.addEventListener("click", () => {
+      if (RR.multiplayer && !RR.multiplayer.startGameFromLobby()) RR.ui.toast("NEED 2 PLAYERS");
+    });
 
     // Apply default map palette before first render
     RR.config.applyMapPalette(RR.state.mapId);
@@ -35,6 +61,7 @@
     RR.bosses.reset();
     RR.ui.hudUpdate();
     RR.ui.showMenu();
+    if (RR.multiplayer && RR.multiplayer.initRealtime) RR.multiplayer.initRealtime();
 
     requestAnimationFrame(loop);
   }
@@ -66,8 +93,12 @@
   }
 
   // ───── Lifecycle ─────
-  function reset() {
+  function reset(options = {}) {
     const st = RR.state;
+    if (!options.multiplayer && RR.config.resetLogicalSize) {
+      RR.config.resetLogicalSize();
+      st.activePlayerCount = 1;
+    }
     st.mode = "playing";
     st.score = 0;
     st.lives = 5;
@@ -89,13 +120,16 @@
     st.warpT = 0;
     RR.fx.shake = 0; RR.fx.flash = 0; RR.fx.slowMo = 0;
     RR.config.applyMapPalette(st.mapId);
+    if (options.multiplayer && RR.multiplayer) RR.multiplayer.setupGameplayPlayers(options.party);
     RR.entities.resetRocket();
+    if (options.multiplayer && RR.multiplayer) RR.multiplayer.positionPlayers();
     RR.entities.clearAll();
     RR.entities.initStars();
     RR.effects.clear();
     RR.spawn.reset();
     RR.bosses.reset();
     RR.ui.hideOverlay();
+    if (RR.ui.updateSessionControls) RR.ui.updateSessionControls();
     RR.ui.hudUpdate();
     RR.ui.toast("MISSION START");
     RR.audio.sfx.start();
@@ -107,6 +141,7 @@
     if (RR.state.mode !== "playing") return;
     RR.state.mode = "paused";
     RR.audio.sfx.pause();
+    if (RR.ui.updateSessionControls) RR.ui.updateSessionControls();
     RR.ui.showPause();
   }
 
@@ -114,6 +149,7 @@
     if (RR.state.mode !== "paused") return;
     RR.state.mode = "playing";
     RR.ui.hideOverlay();
+    if (RR.ui.updateSessionControls) RR.ui.updateSessionControls();
     lastTime = performance.now();
     RR.ui.toast("RESUME");
   }
@@ -175,6 +211,21 @@
   // ───── Update ─────
   function update(dt) {
     const st = RR.state;
+    if (st.mode === "lobby" || st.mode === "lobbyStart") {
+      const gdt = dt;
+      RR.entities.updateRocket(dt);
+      RR.entities.updateStars(dt, gdt);
+      RR.entities.updateAsteroids(dt, gdt);
+      RR.entities.updateBullets(dt, gdt);
+      if (RR.spawn.updateLobby) RR.spawn.updateLobby(dt, gdt);
+      RR.effects.update(dt);
+      if (st.mode === "lobbyStart" && RR.multiplayerState) {
+        RR.multiplayerState.fadeT = Math.max(0, RR.multiplayerState.fadeT - dt);
+      }
+      RR.ui.hudUpdate();
+      return;
+    }
+
     if (st.mode !== "playing" && st.mode !== "bossIntro" && st.mode !== "bossFight" && st.mode !== "bossDefeated" && st.mode !== "wormhole" && st.mode !== "warp") {
       // Still tick effects so background animates on menu.
       RR.effects.update(dt);
