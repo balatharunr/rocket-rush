@@ -1,17 +1,20 @@
 /* Rocket Rush — Local Multiplayer Session Model
  * Party, lobby, color, player-count, and scaling rules.
- * This is transport-ready: swap storage methods for a socket service later.
+ * Storage: Firebase Realtime Database (primary) + localStorage (fallback/cache).
  */
 (function (root) {
   "use strict";
+  console.log("[multiplayer.js] START, window.RR:", typeof root.RR, Object.keys(root.RR || {}));
   const RR = (root.RR = root.RR || {});
 
   const STORAGE_KEY = "rocketRushPartiesV1";
   const NAME_KEY = "rocketRushPlayerName";
   const CLIENT_KEY = "rocketRushClientId";
   const CHANNEL_NAME = "rocketRushParties";
+  const FB_PATH = "rocketRush/parties";
   let channel = null;
   let lastJoinSearch = "";
+  let fbUnsubscribe = null;
 
   function clientId() {
     let id = sessionStorage.getItem(CLIENT_KEY);
@@ -90,17 +93,117 @@
   function saveParties() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mp().parties));
     broadcastSync();
+    fbPushParties();
   }
 
-  function listParties() {
-    if (!mp().parties.length) loadParties();
+  // ─── Firebase Realtime Database ───────────────────────────────────────────
+
+  function fbApp() {
+    return root.RR && root.RR.firebaseApp;
+  }
+
+  async function fbDb() {
+    const app = fbApp();
+    console.log("[fbDb] app:", app);
+    if (!app) return null;
+    // Use the pre-initialized db from index.html if available
+    if (root.RR.firebaseDb) {
+      console.log("[fbDb] using pre-initialized db from index.html");
+      return root.RR.firebaseDb;
+    }
+    if (!root.RR._fbDb) {
+      try {
+        const { getDatabase } = await import("firebase/database");
+        root.RR._fbDb = getDatabase(app);
+        console.log("[fbDb] created db instance");
+      } catch (err) {
+        console.error("[fbDb] error:", err);
+        return null;
+      }
+    }
+    return root.RR._fbDb;
+  }
+
+  async function fbPushParties() {
+    try {
+      const db = await fbDb();
+      console.log("[fbPushParties] db:", db, "parties count:", mp().parties.length);
+      if (!db) { console.log("[fbPushParties] no db, skipping"); return; }
+      const { ref, set } = await import("firebase/database");
+      const dbRef = ref(db, FB_PATH);
+      console.log("[fbPushParties] writing to", FB_PATH);
+      await set(dbRef, mp().parties);
+      console.log("[fbPushParties] done");
+    } catch (err) {
+      console.error("[fbPushParties] error:", err);
+    }
+  }
+
+  async function fbPullParties() {
+    try {
+      const db = await fbDb();
+      console.log("[fbPullParties] db:", db);
+      if (!db) { console.log("[fbPullParties] no db, skipping"); return; }
+      const { ref, get } = await import("firebase/database");
+      const dbRef = ref(db, FB_PATH);
+      console.log("[fbPullParties] reading from", FB_PATH);
+      const snapshot = await get(dbRef);
+      console.log("[fbPullParties] snapshot exists:", snapshot.exists());
+      if (!snapshot.exists()) return;
+      const remoteParties = Array.isArray(snapshot.val()) ? snapshot.val() : Object.values(snapshot.val() || {});
+      console.log("[fbPullParties] remote parties:", remoteParties.length);
+      const localIds = new Set(mp().parties.map((p) => p.id));
+      const remoteNormalized = remoteParties.filter((p) => p && p.active && p.id).map(normalizeParty);
+      remoteNormalized.forEach((rp) => { if (!localIds.has(rp.id)) mp().parties.push(rp); });
+      mp().parties.sort((a, b) => b.createdAt - a.createdAt);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mp().parties));
+      console.log("[fbPullParties] merged, total parties:", mp().parties.length);
+    } catch (err) {
+      console.error("[fbPullParties] error:", err);
+  }
+
+  function fbSubscribe() {
+    if (fbUnsubscribe) { fbUnsubscribe(); fbUnsubscribe = null; }
+    (async () => {
+      try {
+        const db = await fbDb();
+        console.log("[fbSubscribe] db:", db);
+        if (!db) return;
+        const { ref, onValue, off } = await import("firebase/database");
+        const dbRef = ref(db, FB_PATH);
+        console.log("[fbSubscribe] listening on", FB_PATH);
+        const handler = (snapshot) => {
+          console.log("[fbSubscribe] change received, exists:", snapshot.exists());
+          if (!snapshot.exists()) return;
+          const remoteParties = Array.isArray(snapshot.val()) ? snapshot.val() : Object.values(snapshot.val() || {});
+          const localIds = new Set(mp().parties.map((p) => p.id));
+          const remoteNormalized = remoteParties.filter((p) => p && p.active && p.id).map(normalizeParty);
+          let changed = false;
+          remoteNormalized.forEach((rp) => { if (!localIds.has(rp.id)) { mp().parties.push(rp); changed = true; } });
+          if (!changed) return;
+          mp().parties.sort((a, b) => b.createdAt - a.createdAt);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(mp().parties));
+          refreshFromRealtime();
+        };
+        fbUnsubscribe = () => off(ref(db, FB_PATH), handler);
+        onValue(dbRef, handler);
+      } catch (err) {
+        console.error("[fbSubscribe] error:", err);
+      }
+    })();
+  }
+
+  async function listParties() {
+    await fbPullParties();
+    loadParties();
     return mp().parties.filter((party) => party.active).sort((a, b) => b.createdAt - a.createdAt);
   }
 
-  function searchParties(query) {
+  async function searchParties(query) {
     const q = String(query || "").trim().toLowerCase();
-    if (!q) return listParties();
-    return listParties().filter((party) => party.name.toLowerCase().includes(q));
+    const all = await listParties();
+    if (!q) return all;
+    return all.filter((party) => party.name.toLowerCase().includes(q));
   }
 
   function networkAvailable() {
@@ -137,7 +240,10 @@
   }
 
   function initRealtime() {
+    console.log("[initRealtime] starting");
     loadParties();
+    fbSubscribe();
+    console.log("[initRealtime] done");
     if ("BroadcastChannel" in root && !channel) {
       channel = new BroadcastChannel(CHANNEL_NAME);
       channel.onmessage = (event) => {
@@ -150,13 +256,15 @@
   }
 
   function findParty(id) {
-    return listParties().find((party) => party.id === id) || null;
+    loadParties();
+    return mp().parties.find((party) => party.id === id) || null;
   }
 
   function isPartyNameUnique(name, ignoreId, privacy = "public") {
     const normalized = String(name || "").trim().toLowerCase();
     if (!normalized) return false;
-    return !listParties().some((party) => {
+    const all = mp().parties.filter((party) => party.active);
+    return !all.some((party) => {
       if (party.id === ignoreId) return false;
       if (privacy === "public" && party.privacy !== "public") return false;
       return party.name.toLowerCase() === normalized;
@@ -188,7 +296,9 @@
       active: true,
     });
     mp().parties.unshift(party);
+    console.log("[createParty] party created:", party.name, party.id, "pushing to firebase");
     saveParties();
+    console.log("[createParty] after saveParties, parties in state:", mp().parties.length);
     enterLobby(party.id, true);
     return { ok: true, party };
   }
@@ -466,3 +576,4 @@
     difficultyScale,
   };
 })(typeof window !== "undefined" ? window : this);
+console.log("[multiplayer.js] IIFE complete, RR.multiplayer assigned:", typeof window.RR.multiplayer);
