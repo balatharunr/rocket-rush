@@ -72,7 +72,33 @@
     <span>Controls: WASD/Arrows · Space turbo · J/Z or Left Click shoot · B/X or Right Click bomb · P/M/R</span>
   </section>
 </main>
+<script>
+  // Firebase config - loaded inline to avoid module/script ordering issues
+  window.__FIREBASE_CONFIG__ = {
+    apiKey: "AIzaSyCAO2cSQrDpATTMRKfsLKeBjwCjWmv-hpg",
+    authDomain: "rocket-rush-9nx.firebaseapp.com",
+    projectId: "rocket-rush-9nx",
+    storageBucket: "rocket-rush-9nx.appspot.com",
+    messagingSenderId: "753741658337",
+    appId: "1:753741658337:web:1e14a8af77b7e2e9f45fa0",
+    databaseURL: "https://rocket-rush-9nx-default-rtdb.firebaseio.com"
+  };
+</script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+  try {
+    const app = initializeApp(window.__FIREBASE_CONFIG__);
+    const db = getDatabase(app);
+    window.RR = window.RR || {};
+    window.RR.firebaseApp = app;
+    window.RR.firebaseDb = db;
+    console.log("[Firebase] initialized successfully");
+  } catch (err) {
+    console.error("[Firebase] init error:", err);
+  }
+</script>
 <!-- ─── Scripts (load order matters; no bundler required) ─── -->
 <script src="src/js/core/config.js"></script>
 <script src="src/js/content/bosses/zone-1-bosses.js"></script>
