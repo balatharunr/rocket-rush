@@ -53,7 +53,7 @@ body::after {
   box-shadow:
     0 0 0 4px rgba(255,79,216,.32) inset,
     0 0 40px rgba(54,245,255,.22) inset;
-  z-index: 1;
+  z-index: 20;
 }
 
 /* ─── Top bar / HUD ─── */
@@ -150,7 +150,7 @@ canvas {
   position: absolute; inset: 0; display: grid; place-items: center; padding: 16px;
   background: radial-gradient(circle at center, rgba(8,5,32,.55), rgba(5,3,22,.92));
   transition: opacity 200ms ease, visibility 200ms ease;
-  z-index: 5;
+  z-index: 100;
 }
 .overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 .overlay.room-overlay {
@@ -538,7 +538,7 @@ button.danger {
 
 /* ─── Touch controls ─── */
 .touch {
-  position: absolute; inset: 0; pointer-events: none; z-index: 4;
+  position: absolute; inset: 0; pointer-events: none; z-index: 20;
 }
 .touch .pad, .touch .actions {
   position: absolute; bottom: 12px; pointer-events: auto;
