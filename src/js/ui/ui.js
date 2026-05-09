@@ -107,10 +107,19 @@
   }
 
   function ensurePlayerName(next) {
+    console.log("[UI] ensurePlayerName called, next:", typeof next, next && next.name);
+    if (!RR.multiplayer || !RR.multiplayer.hasPlayerName) {
+      console.warn("[UI] RR.multiplayer not ready, showing menu instead");
+      showMenu();
+      return;
+    }
+    console.log("[UI] hasPlayerName:", RR.multiplayer.hasPlayerName());
     if (RR.multiplayer.hasPlayerName()) {
+      console.log("[UI] has player name, calling next directly");
       next();
       return;
     }
+    console.log("[UI] showing player name prompt");
     showPlayerNamePrompt(next);
   }
 
@@ -178,7 +187,11 @@
       <p class="tip">Tip: <strong>TURBO</strong> makes everything faster — including the danger.</p>`;
 
     document.getElementById("menuStartBtn").addEventListener("click", () => { RR.audio.ensure(); RR.game.reset(); });
-    document.getElementById("menuFriendsBtn").addEventListener("click", () => ensurePlayerName(showPartyMenu));
+    document.getElementById("menuFriendsBtn").addEventListener("click", function() {
+      console.log("[UI] Play with Friends click handler fired");
+      console.log("[UI] RR.multiplayer:", typeof RR.multiplayer, !!RR.multiplayer);
+      ensurePlayerName(showPartyMenu);
+    });
     document.getElementById("menuMuteBtn").addEventListener("click", RR.game.toggleMute);
   }
 
@@ -279,11 +292,11 @@
     });
   }
 
-  function showJoinPartyList(error, search = "") {
+  async function showJoinPartyList(error, search = "") {
     RR.state.mode = "partyMenu";
     if (RR.multiplayer.setLastJoinSearch) RR.multiplayer.setLastJoinSearch(search);
     showOverlay();
-    const parties = RR.multiplayer.searchParties(search);
+    const parties = await RR.multiplayer.searchParties(search);
     const rows = parties.length ? parties.map((party) => {
       const canDelete = RR.multiplayer.canDeleteParty && RR.multiplayer.canDeleteParty(party);
       return `
