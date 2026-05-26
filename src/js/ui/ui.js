@@ -168,7 +168,7 @@
         <div class="key-card"><kbd>Space</kbd><span>TURBO BURN</span></div>
         <div class="key-card"><kbd>J</kbd><kbd>Z</kbd><kbd>LMB</kbd><span>Pulse cannon</span></div>
         <div class="key-card"><kbd>B</kbd><kbd>X</kbd><kbd>RMB</kbd><span>Drop bomb</span></div>
-        <div class="key-card"><kbd>P</kbd><kbd>M</kbd><kbd>R</kbd><span>Pause / Mute / Restart</span></div>
+        <div class="key-card"><kbd>P</kbd><kbd>Esc</kbd><kbd>M</kbd><kbd>R</kbd><span>Pause / Mute / Restart</span></div>
       </div>
       <p>
         <strong style="color:var(--green)">Shield</strong> ·
