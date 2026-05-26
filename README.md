@@ -50,7 +50,7 @@ Total control at your fingertips. Choose your weapon:
 | **Shoot** | `Left Click` | `J` or `Z` |
 | **Bomb** | `Right Click` | `B` or `X` |
 | **Turbo Boost** | `Spacebar` | `Shift` |
-| **Pause Game** | `P` | - |
+| **Pause Game** | `P` | `Esc` |
 | **Toggle Mute** | `M` | - |
 | **Instant Restart** | `R` | - |
 
